@@ -7,6 +7,9 @@ if(NOT DEFINED VERILATOR_ROOT)
   set(ENV{VERILATOR_ROOT} "/home/blur/gits/verilator")
 endif()
 
+# 设置 Verilator 头文件目录
+include_directories($ENV{VERILATOR_ROOT}/include)
+
 # 设置编译器参数
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   message("Turn On Debugger")
@@ -51,8 +54,6 @@ set(LAOS laos)
 set(LACPU lacpu)
 set(LAVSIM lavsim)
 set(LA_VSIM_TARGET ${PROJECT_NAME}-vsim)
-
-include_directories(${verilator_DIR}/include)
 
 find_package(verilator HINTS $ENV{VERILATOR_ROOT} ${VERILATOR_ROOT})
 
