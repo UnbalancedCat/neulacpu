@@ -13,6 +13,7 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   add_compile_options(-D DEBUG_MODE)
 endif()
 
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # ----- ----- 构建虚拟外设 ----- -----
 set(LABUS labus)
