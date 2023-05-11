@@ -43,7 +43,7 @@ add_executable(${LA_SIM_TARGET} ${LASIM_SRC})
 
 # ----- ----- 构建操作系统 ----- -----
 set(LAOS laos)
-add_subdirectory(${LAOS})
+# add_custom_target(${LAOS} make build)
 
 
 # ----- ----- 构建 Verilator 项目 ----- -----
