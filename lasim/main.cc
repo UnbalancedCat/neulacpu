@@ -8,18 +8,18 @@
 #include <devaddr.h>
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    std::cout << "Usage: sim <bin>";
-    return 0;
-  }
+  // if (argc < 2) {
+  //   std::cout << "Usage: sim <bin>";
+  //   return 0;
+  // }
 
   SystemBus bus;
   Memory ram(2 * 1024 * 1024);
   Memory stk(256 * 1024);
 
   Memory flash(1024 * 1024);
-  flash.load(argv[1]);
-  ram.load(&flash, IMG_ADDR, flash.size());
+  flash.load("../laos/build/neula-os");
+  ram.load(&flash, 0x0, flash.size());
 
   bus.regdev(&ram,  RAM_ADDR);
   bus.regdev(&stk,  STK_ADDR);

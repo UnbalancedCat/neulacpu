@@ -4,7 +4,7 @@
 #define DEVADDR_H__
 
 #define RAM_ADDR 0x0000'0000
-#define IMG_ADDR 0x0000'8000
+#define IMG_ADDR 0x0001'04d8
 #define STK_ADDR 0x2000'0000
 
 #define DEVICE_BASE 0xa0000000
