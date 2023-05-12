@@ -39,19 +39,19 @@ module exe_stage(
     wire [31:0] es_imm;
     wire [31:0] es_rf_rdata1;
     wire [31:0] es_rf_rdata2;
-    wire [31:0] es_pc         ;
+    wire [31:0] es_pc;
 
 
-    assign {es_alu_op       ,   //158:147
-            es_src1_is_pc   ,   //146:146
-            es_src2_is_imm  ,   //145:145
-            es_src2_is_4    ,   //144:144
-            es_mem_to_reg   ,   //143:143
-            es_reg_we       ,   //142:142
-            es_mem_we       ,   //141:141
-            es_load_op      ,   //140:136
-            es_store_op     ,   //135:133
-            es_branch_op    ,
+    assign {es_alu_op       ,   //166:155
+            es_src1_is_pc   ,   //154:154
+            es_src2_is_imm  ,   //153:153
+            es_src2_is_4    ,   //152:152
+            es_mem_to_reg   ,   //151:151
+            es_reg_we       ,   //150:150
+            es_mem_we       ,   //149:149
+            es_load_op      ,   //148:142
+            es_store_op     ,   //141:141
+            es_branch_op    ,   //141:133
             es_dest         ,   //132:128
             es_imm          ,   //127:96
             es_rf_rdata1    ,   //95 :64
@@ -97,10 +97,10 @@ module exe_stage(
     end
 
     assign es_alu_src1 = es_src1_is_pc  ? es_pc :
-                                        es_rf_rdata1;
+                                          es_rf_rdata1;
     assign es_alu_src2 = es_src2_is_imm ? es_imm : 
-                        es_src2_is_4   ? 32'd4  :
-                                        es_rf_rdata2;
+                         es_src2_is_4   ? 32'd4  :
+                                          es_rf_rdata2;
 
     alu u_alu(
         .alu_op     (es_alu_op    ),
@@ -116,13 +116,13 @@ module exe_stage(
 
     assign data_sram_en    = 1'b1;
     assign data_sram_wen   = (es_mem_we && es_valid) ? (({4{es_store_op[0]}} & ({4{es_alu_result[1:0] == 2'b00}} & 4'b0001)
-                                                                            | ({4{es_alu_result[1:0] == 2'b01}} & 4'b0010)
-                                                                            | ({4{es_alu_result[1:0] == 2'b10}} & 4'b0100)
-                                                                            | ({4{es_alu_result[1:0] == 2'b11}} & 4'b1000))
-                                                    | ({4{es_store_op[1]}} & ({4{es_alu_result[1:0] == 2'b01}} & 4'b0011)
-                                                                            | ({4{es_alu_result[1:0] == 2'b10}} & 4'b1100))
-                                                    | ({4{es_store_op[2]}}                                     & 4'b1111 ))
-                                                                                                                : 4'b0000;
+                                                                             | ({4{es_alu_result[1:0] == 2'b01}} & 4'b0010)
+                                                                             | ({4{es_alu_result[1:0] == 2'b10}} & 4'b0100)
+                                                                             | ({4{es_alu_result[1:0] == 2'b11}} & 4'b1000))
+                                                      | ({4{es_store_op[1]}} & ({4{es_alu_result[1:0] == 2'b01}} & 4'b0011)
+                                                                             | ({4{es_alu_result[1:0] == 2'b10}} & 4'b1100))
+                                                      | ({4{es_store_op[2]}}                                     & 4'b1111 ))
+                                                                                                                 : 4'b0000;
                                 
     assign data_sram_addr  = es_alu_result;
     assign data_sram_wdata = es_store_op[0] ? {4{es_rf_rdata2[ 7:0]}} :

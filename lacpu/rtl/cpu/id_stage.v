@@ -110,22 +110,22 @@ module id_stage(
     wire        rj_lt_rd;
     wire        rj_ltu_rd;
 
-    assign ds_to_es_bus = {alu_op       ,   //158:147
-                        src1_is_pc   ,   //146:146
-                        src2_is_imm  ,   //145:145
-                        src2_is_4    ,   //144:144
-                        mem_to_reg   ,   //143:143
-                        reg_we       ,   //142:142
-                        mem_we       ,   //141:141
-                        load_op      ,   //140:136
-                        store_op     ,   //135:133
-                        branch_op    ,
-                        dest         ,   //132:128
-                        imm          ,   //127:96
-                        rf_rdata1    ,   //95 :64
-                        rf_rdata2    ,   //63 :32
-                        ds_pc            //31 :0
-                        };
+    assign ds_to_es_bus = {alu_op       ,   //166:155
+                           src1_is_pc   ,   //154:154
+                           src2_is_imm  ,   //153:153
+                           src2_is_4    ,   //152:152
+                           mem_to_reg   ,   //151:151
+                           reg_we       ,   //150:150
+                           mem_we       ,   //149:149
+                           load_op      ,   //148:142
+                           store_op     ,   //141:141
+                           branch_op    ,   //141:133
+                           dest         ,   //132:128
+                           imm          ,   //127:96
+                           rf_rdata1    ,   //95 :64
+                           rf_rdata2    ,   //63 :32
+                           ds_pc            //31 :0
+                          };
 
 
     assign ds_ready_go    = 1'b1;
