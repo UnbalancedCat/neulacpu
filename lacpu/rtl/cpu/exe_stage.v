@@ -12,8 +12,6 @@ module exe_stage(
     //to ms
     output                         es_to_ms_valid,
     output [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus  ,
-    //to fs
-    output [`BR_BUS_WD       -1:0] br_bus        ,
     // data sram interface
     output        data_sram_en   ,
     output [ 3:0] data_sram_wen  ,
@@ -59,7 +57,6 @@ module exe_stage(
             es_pc               //31 :0
             } = ds_to_es_bus_r;
 
-    wire        br_taken;
     wire [31:0] br_target;
 
     wire [31:0] es_alu_src1  ;
@@ -70,14 +67,18 @@ module exe_stage(
     wire        es_Overflow  ;
     wire        es_Zero      ;  
 
-    assign br_bus       = {br_taken,br_target};
-
-    assign es_to_ms_bus = {es_load_op       ,   //75:71
-                           es_mem_to_reg    ,   //70:70
-                           es_reg_we        ,   //69:69
-                           es_dest          ,   //68:64
-                           es_alu_result    ,   //63:32
-                           es_pc                //31:0
+    assign es_to_ms_bus = {br_target        ,   //120:89
+                           es_branch_op     ,   //88 :80  
+                           es_Carry         ,   //79 :79
+                           es_Sign          ,   //78 :78
+                           es_Overflow      ,   //77 :77
+                           es_Zero          ,   //76 :76
+                           es_load_op       ,   //75 :71
+                           es_mem_to_reg    ,   //70 :70
+                           es_reg_we        ,   //69 :69
+                           es_dest          ,   //68 :64
+                           es_alu_result    ,   //63 :32
+                           es_pc                //31 :0 
                           };
 
     assign es_ready_go    = 1'b1;
@@ -130,15 +131,6 @@ module exe_stage(
                              es_store_op[2] ?    es_rf_rdata2         :
                                                 32'b0;
 
-    assign br_taken  = (   es_branch_op[0]  &&  es_Zero
-                        || es_branch_op[1]  && !es_Zero 
-                        || es_branch_op[2]  && (es_Sign != es_Overflow)
-                        || es_branch_op[3]  && (es_Zero | (es_Sign == es_Overflow))
-                        || es_branch_op[4]  &&  es_Carry
-                        || es_branch_op[5]  && (es_Zero | ~es_Carry               )
-                        || es_branch_op[6]
-                        || es_branch_op[7]
-                        || es_branch_op[8]);
     assign br_target =  (^es_branch_op[5:0]) ? (es_pc        + es_imm) :
                         ( es_branch_op[7:6]) ? (es_pc        + es_imm) :
                         ( es_branch_op[8]  ) ? (es_rf_rdata1 + es_imm) :

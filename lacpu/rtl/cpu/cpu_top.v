@@ -86,8 +86,6 @@ module mycpu_top(
         //to ms
         .es_to_ms_valid (es_to_ms_valid ),
         .es_to_ms_bus   (es_to_ms_bus   ),
-        //to fs
-        .br_bus         (br_bus         ),
         // data sram interface
         .data_sram_en   (data_sram_en   ),
         .data_sram_wen  (data_sram_wen  ),
@@ -107,6 +105,8 @@ module mycpu_top(
         //to ws
         .ms_to_ws_valid (ms_to_ws_valid ),
         .ms_to_ws_bus   (ms_to_ws_bus   ),
+        //to fs
+        .br_bus         (br_bus         ),
         //from data-sram
         .data_sram_rdata(data_sram_rdata)
     );
