@@ -58,27 +58,33 @@ module soc_lite_top
         .debug_wb_rf_wdata(debug_wb_rf_wdata)
     );
 
-    //inst ram
-    inst_ram inst_ram
-    (
-        .clka  (cpu_clk            ),   
-        .ena   (cpu_inst_en        ),
-        .wea   (cpu_inst_wen       ),   //3:0
-        .addra (cpu_inst_addr[17:2]),   //15:0
-        .dina  (cpu_inst_wdata     ),   //31:0
-        .douta (cpu_inst_rdata     )    //31:0
-    );
 
-    //data ram
-    data_ram data_ram
-    (
-        .clka  (cpu_clk            ),   
-        .ena   (cpu_data_en        ),
-        .wea   (cpu_data_wen       ),   //3:0
-        .addra (cpu_data_addr[17:2]),   //15:0
-        .dina  (cpu_data_wdata     ),   //31:0
-        .douta (cpu_data_rdata     )    //31:0
-    );
+    `ifdef DPIC
+
+    
+    `else
+        //inst ram
+        inst_ram inst_ram
+        (
+            .clka  (cpu_clk            ),   
+            .ena   (cpu_inst_en        ),
+            .wea   (cpu_inst_wen       ),   //3:0
+            .addra (cpu_inst_addr[17:2]),   //15:0
+            .dina  (cpu_inst_wdata     ),   //31:0
+            .douta (cpu_inst_rdata     )    //31:0
+        );
+
+        //data ram
+        data_ram data_ram
+        (
+            .clka  (cpu_clk            ),   
+            .ena   (cpu_data_en        ),
+            .wea   (cpu_data_wen       ),   //3:0
+            .addra (cpu_data_addr[17:2]),   //15:0
+            .dina  (cpu_data_wdata     ),   //31:0
+            .douta (cpu_data_rdata     )    //31:0
+        );
+    `endif
     
 endmodule
 
