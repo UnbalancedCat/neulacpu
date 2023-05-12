@@ -1,4 +1,4 @@
-`include "mycpu.h"
+`include "mycpu.v"
 
 // 译码阶段
 module id_stage(

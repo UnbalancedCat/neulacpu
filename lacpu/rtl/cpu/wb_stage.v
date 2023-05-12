@@ -1,4 +1,4 @@
-`include "mycpu.h"
+`include "mycpu.v"
 
 module wb_stage(
     input                           clk           ,

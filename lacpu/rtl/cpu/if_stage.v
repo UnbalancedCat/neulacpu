@@ -1,4 +1,4 @@
-`include "mycpu.h"
+`include "mycpu.v"
 
 // 取指阶段
 module if_stage(

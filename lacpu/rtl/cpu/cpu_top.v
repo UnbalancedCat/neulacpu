@@ -1,4 +1,4 @@
-`include "mycpu.h"
+`include "mycpu.v"
 
 module mycpu_top(
     input         clk,
