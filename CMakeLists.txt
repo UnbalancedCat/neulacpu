@@ -51,24 +51,24 @@ set(LAOS laos)
 
 
 # ----- ----- 构建 Verilator 项目 ----- -----
-set(LACPU lacpu)
-set(LAVSIM lavsim)
-set(LA_VSIM_TARGET ${PROJECT_NAME}-vsim)
+# set(LACPU lacpu)
+# set(LAVSIM lavsim)
+# set(LA_VSIM_TARGET ${PROJECT_NAME}-vsim)
 
-find_package(verilator HINTS $ENV{VERILATOR_ROOT} ${VERILATOR_ROOT})
+# find_package(verilator HINTS $ENV{VERILATOR_ROOT} ${VERILATOR_ROOT})
 
-if (NOT verilator_FOUND)
-  message(FATAL_ERROR "Verilator was not found.")
-endif()
+# if (NOT verilator_FOUND)
+#   message(FATAL_ERROR "Verilator was not found.")
+# endif()
 
-# set default top module as top file
-set(VSRC ${CMAKE_SOURCE_DIR}/${LACPU}/top.v)
+# # set default top module as top file
+# set(VSRC ${CMAKE_SOURCE_DIR}/${LACPU}/rtl/soc_lite_top.v)
 
-# get all cxx source files from lavsim folder
-file(GLOB_RECURSE LAVSIM_SRC ${CMAKE_SOURCE_DIR}/${LAVSIM}/*.cc)
+# # get all cxx source files from lavsim folder
+# file(GLOB_RECURSE LAVSIM_SRC ${CMAKE_SOURCE_DIR}/${LAVSIM}/*.cc)
 
-add_executable(${LA_VSIM_TARGET} ${LAVSIM_SRC})
+# add_executable(${LA_VSIM_TARGET} ${LAVSIM_SRC})
 
-verilate(${LA_VSIM_TARGET}
-  INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/${LACPU} ${VERILATOR_ROOT}/include
-  SOURCES ${VSRC})
+# verilate(${LA_VSIM_TARGET}
+#   INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/${LACPU}/rtl/cpu ${VERILATOR_ROOT}/include
+#   SOURCES ${VSRC})
