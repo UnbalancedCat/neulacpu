@@ -3,9 +3,15 @@
 #include <cstdint>
 #include <cstdlib>
 
+
 class Device {
+protected:
+  bool cacheable_ = false;
+
 public:
-  Device() = default;
+  Device(bool cacheable);
+
+  bool is_cacheable();
 
   virtual const size_t &size() const = 0;
 
@@ -29,7 +35,9 @@ public:
 
 template <typename T>
 class WRDevice : public Device{
+protected:
   size_t devsiz;
+
 public:
   WRDevice(size_t siz);
 

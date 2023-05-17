@@ -7,23 +7,54 @@ OD	:= $(LA_BIN_PATH)/$(LA_PREFIX)objdump
 OC	:= $(LA_BIN_PATH)/$(LA_PREFIX)objcopy
 RE	:= $(LA_BIN_PATH)/$(LA_PREFIX)readelf
 
+NPROC	:= $(shell nproc)
+
 CMAKE	:= cmake
 
-BUILD_DIR := build
+BUILD_DIR 	:= build
+ABS_BUILD	:= $(CURDIR)/$(BUILD_DIR)
 $(shell mkdir -p $(BUILD_DIR))
 
-BIN		:= neula-os
-COMMON_DIR	:= COMMON
+BIN			:= neula-os
+BINARY		:= $(BUILD_DIR)/$(BIN)
 
-FILES	:= $(shell find src -name *.c)
+TOP_SRC_DIR	:= src
+SOURCE_DIRS	:= $(shell ls $(TOP_SRC_DIR)/* -d)
+MK_DIRS		:= $(addprefix MAKE/,$(SOURCE_DIRS))
+ALL_SRCS	:= $(shell find . -name '*.c')
+LD_CSRIPT	:= kernel.ld
 
-.PHONY: build clean
+EXTRA_MACRO	:= # NDEBUG
 
-build:
-	$(CC) $(FILES) -static --no-pic -march=loongarch32r -o $(BUILD_DIR)/$(BIN)
-	$(OD) -D $(BUILD_DIR)/$(BIN) > $(BUILD_DIR)/$(BIN).dump
-	$(RE) -a $(BUILD_DIR)/$(BIN) > $(BUILD_DIR)/$(BIN).info
-	$(OC) $(BUILD_DIR)/$(BIN) -O binary $(BUILD_DIR)/$(BIN).bin
+EXTRA_FLAGS =  -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
+EXTRA_FLAGS += -MD
+EXTRA_FLAGS += -ffreestanding -fno-common -nostdlib
+EXTRA_FLAGS += -I.
+EXTRA_FLAGS += -fno-pie -no-pie
+EXTRA_FLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+
+COMMONFLAGS	:= $(EXTRA_FLAGS) -march=loongarch32r
+CPPFLAGS	+= $(addprefix -D,$(EXTRA_MACRO)) -I$(CURDIR)/include
+CFLAGS		+= $(COMMONFLAGS) -O
+LDFLAGS		+= $(COMMONFLAGS) -z max-page-size=4096 -T$(LD_CSRIPT)
+
+.PHONY: all build clean
+
+all: build
+
+$(MK_DIRS): MAKE/%:% $(shell find $(%) -name '*.c')
+	@TOP_BUILD_DIR=$(ABS_BUILD) \
+	CC=$(CC)					\
+	CPPFLAGS="$(CPPFLAGS)"		\
+	CFLAGS="$(CFLAGS)"			\
+	LDFLAGS="$(LDFLAGS)"		\
+	$(MAKE) -C $< -j$(NPROC)
+
+build: $(MK_DIRS)
+	@$(CC) -o $(BINARY) $(shell find $(BUILD_DIR) -name '*.o') $(CPPFLAGS) $(CFLAGS) $(LDFLAGS)
+	@$(OD) -D $(BINARY) > $(BINARY).dump
+	@$(RE) -a $(BINARY) > $(BINARY).info
+	@$(OC) $(BINARY) -O binary $(BINARY).bin
 
 clean:
 	rm -rf $(BUILD_DIR)

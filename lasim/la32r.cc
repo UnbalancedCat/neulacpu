@@ -134,6 +134,266 @@ struct CSRBaseInfo {
 // ----- ----- class defines ----- -----
 //
 
+
+/**
+ * @bug no cached flag set
+*/
+class Cache {
+private:
+    // mem addr
+    // -------------------------------------------------------
+    // |  tag                    | idx 5bit | byte sel 5 bit |
+    // -------------------------------------------------------
+
+    // info
+    // -------------------------------------------------------
+    // |                        | MAT | PLV | cached | dirty |
+    // -------------------------------------------------------
+    using lane = u32[8];
+    lane mem_ck1[32];
+    u32 tags_ck1[32];
+    u32 info_ck1[32];
+
+    lane mem_ck2[32];
+    u32 tags_ck2[32];
+    u32 info_ck2[32];
+
+    // common info
+    // -------------------------------------------------------
+    // |                                            | recent |
+    // -------------------------------------------------------
+    // recent => 1: recent use blk1, 0: recent use blk2
+    u32 info[32];
+
+    u32 load(u32 addr) {
+        auto word_sel = (addr >> 2) & 0b111;
+        auto idx = (addr >> 5) & 0b11111;
+        auto tag = addr >> 10;
+
+        if (tags_ck1[idx] == tag) {
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+            return mem_ck1[idx][word_sel];
+        } else if (tags_ck2[idx] == tag) {
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+            return mem_ck2[idx][word_sel];
+        }
+
+        u32 laneaddr = addr << 10 | idx << 5;
+        u32 trans = 0;
+
+        if (info[idx] & 0b1) {
+            // 最近使用块 1
+            // 将块 2 替换下去
+
+            if (info_ck2[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck2[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck2[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+
+            tags_ck2[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck2[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+            // 设置脏位
+            info_ck1[idx] &= ~0b1;
+
+            return mem_ck2[idx][word_sel];
+        } else {
+            // 最近使用块 2
+            // 将块 1 替换下去
+
+            if (info_ck1[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck1[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck1[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+        
+            tags_ck1[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck1[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+            // 设置脏位
+            info_ck1[idx] &= ~0b1;
+
+            return mem_ck1[idx][word_sel];
+        }
+
+    }
+
+    void store(u32 addr, u32 data, u32 bytemsk) {
+        auto word_sel = (addr >> 2) & 0b111;
+        auto idx = (addr >> 5) & 0b11111;
+        auto tag = addr >> 10;
+
+        data = bytemsk & data;
+
+        if (tags_ck1[idx] == tag) {
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+            // 设置脏位
+            info_ck1[idx] |= 0b1;
+
+            mem_ck1[idx][word_sel] = data | (mem_ck1[idx][word_sel] & ~bytemsk);
+            return;
+        } else if (tags_ck2[idx] == tag) {
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+            // 设置脏位
+            info_ck2[idx] |= 0b1;
+
+            mem_ck2[idx][word_sel] = data | (mem_ck2[idx][word_sel] & ~bytemsk);
+            return;
+        }
+
+        u32 laneaddr = addr << 10 | idx << 5;
+        u32 trans = 0;
+
+        if (info[idx] & 0b1) {
+            // 最近使用块 1
+            // 将块 2 替换下去
+
+            if (info_ck2[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck2[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck2[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+
+            tags_ck2[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck2[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+            // 设置脏位
+            info_ck2[idx] |= 0b1;
+
+            mem_ck2[idx][word_sel] = data | (mem_ck2[idx][word_sel] & ~bytemsk);
+        } else {
+            // 最近使用块 2
+            // 将块 1 替换下去
+
+            if (info_ck1[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck1[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck1[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+
+            tags_ck1[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck1[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+            // 设置脏位
+            info_ck1[idx] |= 0b1;
+
+            mem_ck1[idx][word_sel] = data | (mem_ck1[idx][word_sel] & ~bytemsk);
+        }
+    }
+
+    void prefetch(u32 addr, u32 hint) {
+        auto word_sel = (addr >> 2) & 0b111;
+        auto idx = (addr >> 5) & 0b11111;
+        auto tag = addr >> 10;
+
+        if (tags_ck1[idx] == tag) {
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+            return;
+        } else if (tags_ck2[idx] == tag) {
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+            return;
+        }
+
+        u32 laneaddr = addr << 10 | idx << 5;
+        u32 trans = 0;
+
+        if (info[idx] & 0b1) {
+            // 最近使用块 1
+            // 将块 2 替换下去
+
+            if (info_ck2[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck2[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck2[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+
+            tags_ck2[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck2[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 0
+            info[idx] &= ~0b1;
+        } else {
+            // 最近使用块 2
+            // 将块 1 替换下去
+
+            if (info_ck1[idx] & 0b1) {
+                u32 oldlaneaddr = tags_ck1[idx] << 10 | idx << 5;
+                for (size_t i = 0; i < 8; ++i) {
+                    trans = mem_ck1[idx][i];
+                    sysbus->write32(trans, oldlaneaddr);
+                    oldlaneaddr += 4;
+                }
+            }
+
+            tags_ck1[idx] = tag;
+            
+            for (size_t i = 0; i < 8; ++i) {
+                sysbus->read32(trans, laneaddr);
+                mem_ck1[idx][i] = trans;
+                laneaddr += 4;
+            }
+
+            // 将 recent 为设置为 1
+            info[idx] |=  0b1;
+        }
+    }
+};
+
 class Registers {
 private:
     u32 regs_[31] = {0};
@@ -165,6 +425,7 @@ public:
     }
 
     u32 &operator[](u32 idx) {
+        _ = 0;
         panicifnot(0 <= idx && 32 >= idx);
         if (idx == 0) {
             return _;

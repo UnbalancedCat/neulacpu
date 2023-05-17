@@ -3,8 +3,8 @@
 
 std::pair<const uint64_t, Device *> &SystemBus::finddev(uint64_t addr) {
   Device *dev = nullptr;
-  auto &&iter = iomap.upper_bound(addr);
-  if (iter == iomap.begin())
+  auto &&iter = iomap_.upper_bound(addr);
+  if (iter == iomap_.begin())
     panic("device not found");
   iter--;
   if (iter->first <= addr && iter->first + iter->second->size() > addr)
@@ -13,7 +13,7 @@ std::pair<const uint64_t, Device *> &SystemBus::finddev(uint64_t addr) {
   return *iter;
 }
 
-void SystemBus::regdev(Device *dev, uint64_t addr) { iomap.emplace(addr, dev); }
+void SystemBus::regdev(Device *dev, uint64_t addr) { iomap_.emplace(addr, dev); }
 
 void SystemBus::write(char *buf, size_t addr, size_t len) {
   auto &&dev = finddev(addr);

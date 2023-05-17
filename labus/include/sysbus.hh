@@ -7,7 +7,7 @@
 #include <device.hh>
 
 class SystemBus {
-  std::map<uint64_t, Device *> iomap;
+  std::map<uint64_t, Device *> iomap_;
 
   std::pair<const uint64_t, Device *> &finddev(uint64_t addr);
 
