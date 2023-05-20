@@ -19,14 +19,15 @@ BIN			:= neula-os
 BINARY		:= $(BUILD_DIR)/$(BIN)
 
 TOP_SRC_DIR	:= src
-SOURCE_DIRS	:= $(shell ls $(TOP_SRC_DIR)/* -d)
+MODULES		:= kernel util
+SOURCE_DIRS	:= $(addprefix $(TOP_SRC_DIR)/,$(MODULES))
 MK_DIRS		:= $(addprefix MAKE/,$(SOURCE_DIRS))
 ALL_SRCS	:= $(shell find . -name '*.c')
 LD_CSRIPT	:= kernel.ld
 
 EXTRA_MACRO	:= # NDEBUG
 
-EXTRA_FLAGS =  -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
+EXTRA_FLAGS =  -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -gdwarf-2
 EXTRA_FLAGS += -MD
 EXTRA_FLAGS += -ffreestanding -fno-common -nostdlib
 EXTRA_FLAGS += -I.
@@ -58,3 +59,14 @@ build: $(MK_DIRS)
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+
+# use native
+
+clean-usr:
+	rm -rf $(BUILD_DIR)/user
+
+usr:
+	@TOP_BUILD_DIR=$(ABS_BUILD) \
+	CPPFLAGS="$(CPPFLAGS)"		\
+	$(MAKE) native -C $(TOP_SRC_DIR)/user -j$(NPROC)
