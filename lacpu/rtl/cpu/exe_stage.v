@@ -16,7 +16,15 @@ module exe_stage(
     output        data_sram_en   ,
     output [ 3:0] data_sram_wen  ,
     output [31:0] data_sram_addr ,
-    output [31:0] data_sram_wdata
+    output [31:0] data_sram_wdata,
+    //to fw
+    output [`ES_TO_FW_BUS_WD -1:0] es_to_fw_bus  ,
+    //from fw
+    input  [`FW_TO_ES_BUS_WD -1:0] fw_to_es_bus  ,
+    //from ms
+    input  [`MS_TO_ES_BUS_WD -1:0] ms_to_ds_bus  ,
+    //from ws
+    input  [`WS_TO_ES_BUS_WD -1:0] ws_to_ds_bus
 );
 
     reg         es_valid      ;
@@ -39,6 +47,15 @@ module exe_stage(
     wire [31:0] es_rf_rdata2;
     wire [31:0] es_pc;
 
+    wire [31:0] ms_alu_result;
+    wire [31:0] ws_rf_wdata;
+
+    wire        es_src1_is_es_dest;
+    wire        es_src1_is_ms_dest;
+    wire        es_src2_is_es_dest;
+    wire        es_src2_is_ms_dest;
+    wire        es_data_is_rf_wdata;
+
 
     assign {es_alu_op       ,   //166:155
             es_src1_is_pc   ,   //154:154
@@ -56,6 +73,16 @@ module exe_stage(
             es_rf_rdata2    ,   //63 :32
             es_pc               //31 :0
             } = ds_to_es_bus_r;
+
+    assign {es_src1_is_es_dest ,
+            es_src1_is_ms_dest ,
+            es_src2_is_es_dest ,
+            es_src2_is_ms_dest ,
+            es_data_is_rf_wdata
+            } = fw_to_es_bus;
+
+    assign ms_alu_result = ms_to_ds_bus;
+    assign ws_rf_wdata   = ws_to_ds_bus;
 
     wire [31:0] br_target;
 
@@ -81,6 +108,12 @@ module exe_stage(
                            es_pc                //31 :0 
                           };
 
+    assign es_to_fw_bus = {es_rf_rdata2 , 
+                           es_dest      ,
+                           es_reg_we    , 
+                           es_mem_we     
+                           };
+
     assign es_ready_go    = 1'b1;
     assign es_allowin     = !es_valid || es_ready_go && ms_allowin;
     assign es_to_ms_valid =  es_valid && es_ready_go;
@@ -97,11 +130,15 @@ module exe_stage(
         end
     end
 
-    assign es_alu_src1 = es_src1_is_pc  ? es_pc :
-                                          es_rf_rdata1;
-    assign es_alu_src2 = es_src2_is_imm ? es_imm : 
-                         es_src2_is_4   ? 32'd4  :
-                                          es_rf_rdata2;
+    assign es_alu_src1 = es_src1_is_pc      ? es_pc         :
+                         es_src1_is_es_dest ? ms_alu_result :
+                         es_src1_is_ms_dest ? ws_rf_wdata   :
+                                              es_rf_rdata1;
+    assign es_alu_src2 = es_src2_is_imm     ? es_imm        : 
+                         es_src2_is_4       ? 32'd4         :
+                         es_src2_is_es_dest ? ms_alu_result :
+                         es_src2_is_ms_dest ? ws_rf_wdata   :
+                                              es_rf_rdata2;
 
     alu u_alu(
         .alu_op     (es_alu_op    ),
@@ -126,10 +163,11 @@ module exe_stage(
                                                                                                                  : 4'b0000;
                                 
     assign data_sram_addr  = es_alu_result;
-    assign data_sram_wdata = es_store_op[0] ? {4{es_rf_rdata2[ 7:0]}} :
-                             es_store_op[1] ? {2{es_rf_rdata2[15:0]}} :
-                             es_store_op[2] ?    es_rf_rdata2         :
-                                                32'b0;
+    assign data_sram_wdata = es_data_is_rf_wdata ?    ws_rf_wdata          : 
+                             es_store_op[0]      ? {4{es_rf_rdata2[ 7:0]}} :
+                             es_store_op[1]      ? {2{es_rf_rdata2[15:0]}} :
+                             es_store_op[2]      ?    es_rf_rdata2         :
+                                                      32'b0;
 
     assign br_target =  (^es_branch_op[5:0]) ? (es_pc        + es_imm) :
                         ( es_branch_op[7:6]) ? (es_pc        + es_imm) :

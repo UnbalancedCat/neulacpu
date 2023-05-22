@@ -1,21 +1,25 @@
 `include "mycpu.v"
 
 module mem_stage(
-    input                          clk           ,
-    input                          reset         ,
+    input                          clk            ,
+    input                          reset          ,
     //allowin
-    input                          ws_allowin    ,
-    output                         ms_allowin    ,
+    input                          ws_allowin     ,
+    output                         ms_allowin     ,
     //from es
-    input                          es_to_ms_valid,
-    input  [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus  ,
+    input                          es_to_ms_valid ,
+    input  [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus   ,
     //to ws
-    output                         ms_to_ws_valid,
-    output [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus  ,
+    output                         ms_to_ws_valid ,
+    output [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus   ,
     //to fs
-    output [`BR_BUS_WD       -1:0] br_bus        ,
+    output [`BR_BUS_WD       -1:0] br_bus         ,
     //from data-sram
-    input  [31                 :0] data_sram_rdata
+    input  [31                 :0] data_sram_rdata,
+    //to fw
+    output [`MS_TO_FW_BUS_WD -1:0] ms_to_fw_bus   ,
+    //to es
+    output [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus
 );
 
     reg         ms_valid;
@@ -62,6 +66,10 @@ module mem_stage(
                            ms_final_result,  //63:32
                            ms_pc             //31:0
                           };
+
+    assign ms_to_fw_bus = {ms_dest, ms_reg_we};
+
+    assign ms_to_es_bus = {ms_alu_result};
 
     assign ms_ready_go    = 1'b1;
     assign ms_allowin     = !ms_valid || ms_ready_go && ws_allowin;

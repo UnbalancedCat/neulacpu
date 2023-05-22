@@ -38,6 +38,13 @@ module mycpu_top(
     wire [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus;
     wire [`WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus;
     wire [`BR_BUS_WD       -1:0] br_bus;
+    wire [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus;
+    wire [`ES_TO_FW_BUS_WD -1:0] es_to_fw_bus;
+    wire [`MS_TO_FW_BUS_WD -1:0] ms_to_fw_bus;
+    wire [`FW_TO_ES_BUS_WD -1:0] fw_to_es_bus;
+    wire [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus;
+    wire [`WS_TO_ES_BUS_WD -1:0] ws_to_es_bus;
+
 
     // IF stage
     if_stage if_stage(
@@ -71,7 +78,9 @@ module mycpu_top(
         .ds_to_es_valid (ds_to_es_valid ),
         .ds_to_es_bus   (ds_to_es_bus   ),
         //to rf: for write back
-        .ws_to_rf_bus   (ws_to_rf_bus   )
+        .ws_to_rf_bus   (ws_to_rf_bus   ),
+
+        .ds_to_fw_bus   (ds_to_fw_bus   )
     );
     // EXE stage
     exe_stage exe_stage(
@@ -86,6 +95,14 @@ module mycpu_top(
         //to ms
         .es_to_ms_valid (es_to_ms_valid ),
         .es_to_ms_bus   (es_to_ms_bus   ),
+        //from fw
+        .fw_to_es_bus   (fw_to_es_bus   ),
+        //to fw
+        .es_to_fw_bus   (es_to_fw_bus   ),
+        //from ms
+        .ms_to_ds_bus   (ms_to_es_bus   ),
+        //from ws
+        .ws_to_ds_bus   (ws_to_es_bus   ),
         // data sram interface
         .data_sram_en   (data_sram_en   ),
         .data_sram_wen  (data_sram_wen  ),
@@ -108,7 +125,11 @@ module mycpu_top(
         //to fs
         .br_bus         (br_bus         ),
         //from data-sram
-        .data_sram_rdata(data_sram_rdata)
+        .data_sram_rdata(data_sram_rdata),
+        //to fw
+        .ms_to_fw_bus   (ms_to_fw_bus   ),
+        //to es
+        .ms_to_es_bus   (ms_to_es_bus   )
     );
     // WB stage
     wb_stage wb_stage(
@@ -121,11 +142,24 @@ module mycpu_top(
         .ms_to_ws_bus   (ms_to_ws_bus   ),
         //to rf: for write back
         .ws_to_rf_bus   (ws_to_rf_bus   ),
+        //to es
+        .ws_to_es_bus   (ws_to_es_bus   ),
         //trace debug interface
         .debug_wb_pc      (debug_wb_pc      ),
         .debug_wb_rf_wen  (debug_wb_rf_wen  ),
         .debug_wb_rf_wnum (debug_wb_rf_wnum ),
         .debug_wb_rf_wdata(debug_wb_rf_wdata)
+    );
+
+    // Forwarding
+    forward forward(
+        .clk            (clk         ),
+        .reset          (reset       ),
+        .ds_to_fw_bus   (ds_to_fw_bus),
+        .es_to_fw_bus   (es_to_fw_bus),
+        .ms_to_fw_bus   (ms_to_fw_bus),
+
+        .fw_to_es_bus   (fw_to_es_bus)
     );
 
 endmodule
