@@ -57,7 +57,7 @@ module exe_stage(
     wire        es_data_is_rf_wdata;
 
 
-    assign {es_alu_op       ,   //166:155
+    assign {es_alu_op       ,   //169:155
             es_src1_is_pc   ,   //154:154
             es_src2_is_imm  ,   //153:153
             es_src2_is_4    ,   //152:152
