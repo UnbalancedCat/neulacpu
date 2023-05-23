@@ -14,5 +14,5 @@ vivado.log
 !/lacpu/run_vivado/la32r/la32r.xpr
 !/lacpu/rtl/xilinx_ip/inst_ram/inst_ram.xci
 !/lacpu/rtl/xilinx_ip/data_ram/data_ram.xci
-!/lacpu/rtl/xilinx_ip/data_ram/div.xci
-!/lacpu/rtl/xilinx_ip/data_ram/divu.xci
+!/lacpu/rtl/xilinx_ip/div/div.xci
+!/lacpu/rtl/xilinx_ip/divu/divu.xci
