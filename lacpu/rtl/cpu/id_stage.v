@@ -40,7 +40,7 @@ module id_stage(
             rf_wdata   //31:0
         } = ws_to_rf_bus;
 
-    wire [14:0] alu_op;
+    wire [18:0] alu_op;
     wire        src1_is_pc;
     wire        src2_is_imm;
     wire        src2_is_4;
@@ -84,6 +84,10 @@ module id_stage(
     wire        inst_sraw;
     wire        inst_slliw;
     wire        inst_srliw;
+    wire        inst_sraiw;
+    wire        inst_mulw;
+    wire        inst_mulhw;
+    wire        inst_mulhwu;
     wire        inst_beq;
     wire        inst_bne;
     wire        inst_blt;
@@ -101,6 +105,12 @@ module id_stage(
     wire        inst_stb;
     wire        inst_sth;
     wire        inst_stw;
+    wire        inst_divw;
+    wire        inst_modw;
+    wire        inst_divwu;
+    wire        inst_modwu;
+
+
 
     wire        dst_is_r1;   
 
@@ -113,7 +123,7 @@ module id_stage(
     wire        rj_lt_rd;
     wire        rj_ltu_rd;
 
-    assign ds_to_es_bus = {alu_op       ,   //169:155
+    assign ds_to_es_bus = {alu_op       ,   //173:155
                            src1_is_pc   ,   //154:154
                            src2_is_imm  ,   //153:153
                            src2_is_4    ,   //152:152
@@ -177,6 +187,10 @@ module id_stage(
     assign inst_mulw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11000];
     assign inst_mulhw       = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11001];
     assign inst_mulhwu      = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11010];
+    assign inst_divw        = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00000];
+    assign inst_modw        = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00001];
+    assign inst_divwu       = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00010];
+    assign inst_modwu       = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00011];
     assign inst_slti        = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b000];
     assign inst_sltui       = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b001];
     assign inst_addiw       = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b010];
@@ -203,9 +217,6 @@ module id_stage(
     assign inst_bltu        = (op[21:15] ==  3'b011           ) &  op6_d[3'b010];
     assign inst_bgeu        = (op[21:15] ==  3'b011           ) &  op6_d[3'b011];
 
-
-
-
     assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw | inst_bl | inst_jirl;
     assign alu_op[ 1] = inst_subw;
     assign alu_op[ 2] = inst_slt    | inst_slti;
@@ -221,6 +232,10 @@ module id_stage(
     assign alu_op[12] = inst_mulw;
     assign alu_op[13] = inst_mulhw;
     assign alu_op[14] = inst_mulhwu;
+    assign alu_op[15] = inst_divw;
+    assign alu_op[16] = inst_modw;
+    assign alu_op[17] = inst_divwu;
+    assign alu_op[18] = inst_modwu;
 
     assign imm  =     {32{inst_slti   | inst_sltui | inst_addiw | inst_ldb  | inst_ldh | inst_ldw  | inst_stb | inst_sth | inst_stw | inst_ldbu | inst_ldhu}} & {{20{ds_inst[21]}}, ds_inst[21:10]} 
                     | {32{inst_beq    | inst_bne   | inst_bge   | inst_bgeu | inst_blt | inst_bltu | inst_jirl}} & {{14{ds_inst[25]}}, ds_inst[25:10], 2'b0}

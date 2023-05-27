@@ -31,7 +31,7 @@ module forward(
     wire       data_is_rf_wdata;
 
     assign {ds_rf_raddr1, ds_rf_raddr2                 } = ds_to_fw_bus_r;
-    assign {es_rf_rdata2, es_dest, es_reg_we, es_mem_we} = es_to_fw_bus_r;
+    assign {es_rf_raddr2, es_dest, es_reg_we, es_mem_we} = es_to_fw_bus_r;
     assign {ms_dest     , ms_reg_we}                     = ms_to_fw_bus_r;
 
     assign fw_to_es_bus = {src1_is_es_dest  ,   //4:4

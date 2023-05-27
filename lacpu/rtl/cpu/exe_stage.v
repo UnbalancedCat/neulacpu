@@ -24,14 +24,32 @@ module exe_stage(
     //from ms
     input  [`MS_TO_ES_BUS_WD -1:0] ms_to_ds_bus  ,
     //from ws
-    input  [`WS_TO_ES_BUS_WD -1:0] ws_to_ds_bus
+    input  [`WS_TO_ES_BUS_WD -1:0] ws_to_ds_bus  ,
+    //div
+    output [31:0] div_divisor_data      ,
+    output        div_divisor_valid     ,
+    input         div_divisor_ready     ,
+    output [31:0] div_dividend_data     ,
+    output        div_dividend_valid    ,
+    input         div_dividend_ready    ,
+    input         div_dout_valid        ,
+    input  [63:0] div_dout_data         ,
+    //divu
+    output [31:0] divu_divisor_data     ,
+    output        divu_divisor_valid    ,
+    input         divu_divisor_ready    ,
+    output [31:0] divu_dividend_data    ,
+    output        divu_dividend_valid   ,
+    input         divu_dividend_ready   ,
+    input         divu_dout_valid       ,
+    input  [63:0] divu_dout_data
 );
 
     reg         es_valid      ;
     wire        es_ready_go   ;
 
     reg  [`DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
-    wire [11:0] es_alu_op;
+    wire [18:0] es_alu_op;
     wire        es_src1_is_pc;
     wire        es_src2_is_imm;
     wire        es_src2_is_4;
@@ -56,8 +74,7 @@ module exe_stage(
     wire        es_src2_is_ms_dest;
     wire        es_data_is_rf_wdata;
 
-
-    assign {es_alu_op       ,   //169:155
+    assign {es_alu_op       ,   //173:155
             es_src1_is_pc   ,   //154:154
             es_src2_is_imm  ,   //153:153
             es_src2_is_4    ,   //152:152
@@ -93,6 +110,26 @@ module exe_stage(
     wire        es_Sign      ;
     wire        es_Overflow  ;
     wire        es_Zero      ;  
+    wire [31:0] es_result    ;
+
+    reg         div_divisor_valid_reg;
+    reg         div_divisor_ready_flag;
+    reg         div_dividend_valid_reg;
+    reg         div_dividend_ready_flag;
+    reg         divu_divisor_valid_reg;
+    reg         divu_divisor_ready_flag;
+    reg         divu_dividend_valid_reg;
+    reg         divu_dividend_ready_flag;
+
+    wire        es_inst_divw ;
+    wire        es_inst_modw ;
+    wire        es_inst_divwu;
+    wire        es_inst_modwu; 
+    wire        is_div_mod;
+
+    wire [31:0] div_mod_result;
+
+    assign es_result = is_div_mod ? div_mod_result : es_alu_result;
 
     assign es_to_ms_bus = {br_target        ,   //120:89
                            es_branch_op     ,   //88 :80  
@@ -104,7 +141,7 @@ module exe_stage(
                            es_mem_to_reg    ,   //70 :70
                            es_reg_we        ,   //69 :69
                            es_dest          ,   //68 :64
-                           es_alu_result    ,   //63 :32
+                           es_result        ,   //63 :32
                            es_pc                //31 :0 
                           };
 
@@ -114,7 +151,7 @@ module exe_stage(
                            es_mem_we     
                            };
 
-    assign es_ready_go    = 1'b1;
+    assign es_ready_go    = (is_div_mod && !(div_dout_valid || divu_dout_valid)) ? 1'b1 : 1'b0;
     assign es_allowin     = !es_valid || es_ready_go && ms_allowin;
     assign es_to_ms_valid =  es_valid && es_ready_go;
     always @(posedge clk) begin
@@ -140,8 +177,95 @@ module exe_stage(
                          es_src2_is_ms_dest ? ws_rf_wdata   :
                                               es_rf_rdata2;
 
+    assign is_div_mod    = es_inst_divw | es_inst_modw | es_inst_divwu | es_inst_modwu; 
+    assign es_inst_divw  = es_alu_op[15];
+    assign es_inst_modw  = es_alu_op[16];
+    assign es_inst_divwu = es_alu_op[17];
+    assign es_inst_modwu = es_alu_op[18];
+
+    assign div_divisor_data   = es_alu_src1;
+    assign div_dividend_data  = es_alu_src2;
+    assign divu_divisor_data  = es_alu_src1;
+    assign divu_dividend_data = es_alu_src2;
+    
+    always @(posedge clk) begin
+        if(reset) begin
+            div_divisor_valid_reg   <= 0'b0;
+            div_divisor_ready_flag  <= 0'b0;
+        end
+        else if(div_divisor_valid_reg && div_divisor_ready) begin
+            div_divisor_valid_reg   <= 0'b0;
+            div_divisor_ready_flag  <= 0'b1;
+        end
+        else if((es_inst_divw || es_inst_modw) && !div_divisor_ready_flag) begin
+            div_divisor_valid_reg   <= 0'b1;
+        end
+        else if(es_ready_go) begin
+            div_divisor_ready_flag  <= 1'b0;
+        end
+    end
+    always @(posedge clk) begin
+        if(reset) begin
+            div_dividend_valid_reg   <= 0'b0;
+            div_dividend_ready_flag  <= 0'b0;
+        end
+        else if(div_dividend_valid_reg && div_dividend_ready) begin
+            div_dividend_valid_reg   <= 0'b0;
+            div_dividend_ready_flag  <= 0'b1;
+        end
+        else if((es_inst_divw || es_inst_modw) && !div_dividend_ready_flag) begin
+            div_dividend_valid_reg   <= 0'b1;
+        end
+        else if(es_ready_go) begin
+            div_dividend_ready_flag  <= 1'b0;
+        end
+    end
+    always @(posedge clk) begin
+        if(reset) begin
+            divu_divisor_valid_reg   <= 0'b0;
+            divu_divisor_ready_flag  <= 0'b0;
+        end
+        else if(divu_divisor_valid_reg && divu_divisor_ready) begin
+            divu_divisor_valid_reg   <= 0'b0;
+            divu_divisor_ready_flag  <= 0'b1;
+        end
+        else if((es_inst_divw || es_inst_modw) && !divu_divisor_ready_flag) begin
+            divu_divisor_valid_reg   <= 0'b1;
+        end
+        else if(es_ready_go) begin
+            divu_divisor_ready_flag  <= 1'b0;
+        end
+    end
+    always @(posedge clk) begin
+        if(reset) begin
+            divu_dividend_valid_reg   <= 0'b0;
+            divu_dividend_ready_flag  <= 0'b0;
+        end
+        else if(divu_dividend_valid_reg && divu_dividend_ready) begin
+            divu_dividend_valid_reg   <= 0'b0;
+            divu_dividend_ready_flag  <= 0'b1;
+        end
+        else if((es_inst_divw || es_inst_modw) && !divu_dividend_ready_flag) begin
+            divu_dividend_valid_reg   <= 0'b1;
+        end
+        else if(es_ready_go) begin
+            divu_dividend_ready_flag  <= 1'b0;
+        end
+    end
+
+    assign div_divisor_valid  = div_divisor_valid_reg;
+    assign div_dividend_valid  = div_dividend_valid_reg;
+    assign divu_divisor_valid = divu_divisor_valid_reg;
+    assign divu_dividend_valid = divu_dividend_valid_reg;
+
+    assign div_mod_result = es_inst_divw  ? div_dout_data[63:32]  :
+                            es_inst_modw  ? div_dout_data[31: 0]  :
+                            es_inst_divwu ? divu_dout_data[63:32] :
+                            es_inst_modwu ? divu_dout_data[31: 0] :
+                                            32'b0;
+
     alu u_alu(
-        .alu_op     (es_alu_op    ),
+        .alu_op     (es_alu_op[14:0]),
         .alu_src1   (es_alu_src1  ),
         .alu_src2   (es_alu_src2  ),
         .alu_result (es_alu_result),
