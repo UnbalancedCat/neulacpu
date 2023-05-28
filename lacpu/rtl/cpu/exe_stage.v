@@ -190,15 +190,15 @@ module exe_stage(
     
     always @(posedge clk) begin
         if(reset) begin
-            div_divisor_valid_reg   <= 0'b0;
-            div_divisor_ready_flag  <= 0'b0;
+            div_divisor_valid_reg   <= 1'b0;
+            div_divisor_ready_flag  <= 1'b0;
         end
         else if(div_divisor_valid_reg && div_divisor_ready) begin
-            div_divisor_valid_reg   <= 0'b0;
-            div_divisor_ready_flag  <= 0'b1;
+            div_divisor_valid_reg   <= 1'b0;
+            div_divisor_ready_flag  <= 1'b1;
         end
         else if((es_inst_divw || es_inst_modw) && !div_divisor_ready_flag) begin
-            div_divisor_valid_reg   <= 0'b1;
+            div_divisor_valid_reg   <= 1'b1;
         end
         else if(es_ready_go) begin
             div_divisor_ready_flag  <= 1'b0;
@@ -206,15 +206,15 @@ module exe_stage(
     end
     always @(posedge clk) begin
         if(reset) begin
-            div_dividend_valid_reg   <= 0'b0;
-            div_dividend_ready_flag  <= 0'b0;
+            div_dividend_valid_reg   <= 1'b0;
+            div_dividend_ready_flag  <= 1'b0;
         end
         else if(div_dividend_valid_reg && div_dividend_ready) begin
-            div_dividend_valid_reg   <= 0'b0;
-            div_dividend_ready_flag  <= 0'b1;
+            div_dividend_valid_reg   <= 1'b0;
+            div_dividend_ready_flag  <= 1'b1;
         end
         else if((es_inst_divw || es_inst_modw) && !div_dividend_ready_flag) begin
-            div_dividend_valid_reg   <= 0'b1;
+            div_dividend_valid_reg   <= 1'b1;
         end
         else if(es_ready_go) begin
             div_dividend_ready_flag  <= 1'b0;
@@ -222,15 +222,15 @@ module exe_stage(
     end
     always @(posedge clk) begin
         if(reset) begin
-            divu_divisor_valid_reg   <= 0'b0;
-            divu_divisor_ready_flag  <= 0'b0;
+            divu_divisor_valid_reg   <= 1'b0;
+            divu_divisor_ready_flag  <= 1'b0;
         end
         else if(divu_divisor_valid_reg && divu_divisor_ready) begin
-            divu_divisor_valid_reg   <= 0'b0;
-            divu_divisor_ready_flag  <= 0'b1;
+            divu_divisor_valid_reg   <= 1'b0;
+            divu_divisor_ready_flag  <= 1'b1;
         end
         else if((es_inst_divw || es_inst_modw) && !divu_divisor_ready_flag) begin
-            divu_divisor_valid_reg   <= 0'b1;
+            divu_divisor_valid_reg   <= 1'b1;
         end
         else if(es_ready_go) begin
             divu_divisor_ready_flag  <= 1'b0;
@@ -238,15 +238,15 @@ module exe_stage(
     end
     always @(posedge clk) begin
         if(reset) begin
-            divu_dividend_valid_reg   <= 0'b0;
-            divu_dividend_ready_flag  <= 0'b0;
+            divu_dividend_valid_reg   <= 1'b0;
+            divu_dividend_ready_flag  <= 1'b0;
         end
         else if(divu_dividend_valid_reg && divu_dividend_ready) begin
-            divu_dividend_valid_reg   <= 0'b0;
-            divu_dividend_ready_flag  <= 0'b1;
+            divu_dividend_valid_reg   <= 1'b0;
+            divu_dividend_ready_flag  <= 1'b1;
         end
         else if((es_inst_divw || es_inst_modw) && !divu_dividend_ready_flag) begin
-            divu_dividend_valid_reg   <= 0'b1;
+            divu_dividend_valid_reg   <= 1'b1;
         end
         else if(es_ready_go) begin
             divu_dividend_ready_flag  <= 1'b0;

@@ -15,4 +15,7 @@
 
     `define MS_TO_ES_BUS_WD 32
     `define WS_TO_ES_BUS_WD 32
+
+    `define DS_TO_LU_BUS_WD 10
+    `define ES_TO_LU_BUS_WD 10
 `endif
