@@ -16,7 +16,9 @@ module id_stage(
     //to fs
     input  [`WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus  ,
     //to fw
-    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus
+    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  ,
+    //to lu
+    output [`DS_TO_LU_BUS_WD -1:0] ds_to_lu_bus
 
 );
 
@@ -142,6 +144,8 @@ module id_stage(
 
     assign ds_to_fw_bus = {rf_raddr1 , rf_raddr2};
 
+    assign ds_to_lu_bus = {rf_raddr1 , rf_raddr2};
+
     assign ds_ready_go    = 1'b1;
     assign ds_allowin     = !ds_valid || ds_ready_go && es_allowin;
     assign ds_to_es_valid = ds_valid && ds_ready_go;
@@ -246,7 +250,7 @@ module id_stage(
 
     assign src1_is_pc   = inst_bl        | inst_jirl   | inst_pcaddu12i;
     assign src2_is_4    = inst_bl        | inst_jirl;
-    assign src2_is_imm  = inst_addiw     | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw;
+    assign src2_is_imm  = inst_addiw     | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu;
     assign dst_is_r1    = inst_bl;
 
     assign reg_we       = ~(inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu | inst_b | inst_stw | inst_sth | inst_stb);
