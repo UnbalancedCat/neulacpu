@@ -19,7 +19,10 @@ module mem_stage(
     //to fw
     output [`MS_TO_FW_BUS_WD -1:0] ms_to_fw_bus   ,
     //to es
-    output [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus
+    output [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus   ,
+    //div mul
+    input  [31:0]     div_result    ,
+    input  [31:0]     mod_result
 );
 
     reg         ms_valid;
@@ -35,12 +38,14 @@ module mem_stage(
     wire [ 4:0] ms_dest;
     wire [31:0] ms_alu_result;
     wire [31:0] ms_pc;
+    wire [ 1:0] ms_div_op;
     wire        ms_Carry     ;
     wire        ms_Sign      ;
     wire        ms_Overflow  ;
     wire        ms_Zero      ;  
 
-    assign {br_target        ,   //120:89
+    assign {ms_div_op        ,   //122:121
+            br_target        ,   //120:89
             ms_branch_op     ,   //88 :80  
             ms_Carry         ,   //79 :79
             ms_Sign          ,   //78 :78
@@ -96,8 +101,10 @@ module mem_stage(
                          ms_load_op[2]                   ? (                                                                                    data_sram_rdata              ) :
                                                              32'b0;
 
-    assign ms_final_result = ms_mem_to_reg ? mem_result
-                                           : ms_alu_result;
+    assign ms_final_result = ms_mem_to_reg ? mem_result :
+                             ms_div_op[0]  ? div_result :
+                             ms_div_op[1]  ? mod_result :
+                                             ms_alu_result;
 
     assign br_taken  = (   ms_branch_op[0]  &&  ms_Zero
                         || ms_branch_op[1]  && !ms_Zero 

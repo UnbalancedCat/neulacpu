@@ -48,6 +48,14 @@ module mycpu_top(
     wire [`ES_TO_LU_BUS_WD -1:0] es_to_lu_bus;
     wire                         lu_to_es_bus;
 
+    wire        es_div_enable;
+    wire        es_div_sign;
+    wire [31:0] es_rf_rdata1;
+    wire [31:0] es_rf_rdata2;
+    wire        div_complete;
+    wire [31:0] div_result;
+    wire [31:0] mod_result;
+
 
     // IF stage
     if_stage if_stage(
@@ -116,8 +124,27 @@ module mycpu_top(
         .data_sram_en   (data_sram_en   ),
         .data_sram_wen  (data_sram_wen  ),
         .data_sram_addr (data_sram_addr ),
-        .data_sram_wdata(data_sram_wdata)
+        .data_sram_wdata(data_sram_wdata),
+        // div
+        .es_div_enable  (es_div_enable)  ,
+        .es_div_sign    (es_div_sign)    ,
+        .es_rf_rdata1   (es_rf_rdata1)   ,
+        .es_rf_rdata2   (es_rf_rdata2)   ,
+        .div_complete   (div_complete)
     );
+    // div
+    div u_div(
+    .div_clk         (clk            ),
+    .reset           (reset          ),
+    .div             (es_div_enable  ),
+    .div_signed      (es_div_sign    ),
+    .x               (es_rf_rdata1   ),
+    .y               (es_rf_rdata2   ),
+    .s               (div_result     ),
+    .r               (mod_result     ),
+    .complete        (div_complete   )
+    );
+
     // MEM stage
     mem_stage mem_stage(
         .clk            (clk            ),
@@ -138,8 +165,13 @@ module mycpu_top(
         //to fw
         .ms_to_fw_bus   (ms_to_fw_bus   ),
         //to es
-        .ms_to_es_bus   (ms_to_es_bus   )
+        .ms_to_es_bus   (ms_to_es_bus   ),
+        //div
+        .div_result     (div_result     ),
+        .mod_result     (mod_result     )
     );
+
+
     // WB stage
     wb_stage wb_stage(
         .clk            (clk            ),
