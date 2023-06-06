@@ -15,24 +15,6 @@ module mycpu_top(
     output [31:0] data_sram_addr,
     output [31:0] data_sram_wdata,
     input  [31:0] data_sram_rdata,
-    //div
-    output [31:0] div_divisor_data,
-    output        div_divisor_valid,
-    input         div_divisor_ready,
-    output [31:0] div_dividend_data,
-    output        div_dividend_valid,
-    input         div_dividend_ready,
-    input         div_dout_valid,
-    input  [63:0] div_dout_data,
-    //divu
-    output [31:0] divu_divisor_data,
-    output        divu_divisor_valid,
-    input         divu_divisor_ready,
-    output [31:0] divu_dividend_data,
-    output        divu_dividend_valid,
-    input         divu_dividend_ready,
-    input         divu_dout_valid,
-    input  [63:0] divu_dout_data,
     // trace debug interface
     output [31:0] debug_wb_pc,
     output [ 3:0] debug_wb_rf_wen,
@@ -134,25 +116,7 @@ module mycpu_top(
         .data_sram_en   (data_sram_en   ),
         .data_sram_wen  (data_sram_wen  ),
         .data_sram_addr (data_sram_addr ),
-        .data_sram_wdata(data_sram_wdata),
-        //div
-        .div_divisor_data   (div_divisor_data   ),
-        .div_divisor_valid  (div_divisor_valid  ),
-        .div_divisor_ready  (div_divisor_ready  ),
-        .div_dividend_data  (div_dividend_data  ),
-        .div_dividend_valid (div_dividend_valid ),
-        .div_dividend_ready (div_dividend_ready ),
-        .div_dout_valid     (div_dout_valid     ),
-        .div_dout_data      (div_dout_data      ),
-        //divu
-        .divu_divisor_data  (divu_divisor_data  ),
-        .divu_divisor_valid (divu_divisor_valid ),
-        .divu_divisor_ready (divu_divisor_ready ),
-        .divu_dividend_data (divu_dividend_data ),
-        .divu_dividend_valid(divu_dividend_valid),
-        .divu_dividend_ready(divu_dividend_ready),
-        .divu_dout_valid    (divu_dout_valid    ),
-        .divu_dout_data     (divu_dout_data     )
+        .data_sram_wdata(data_sram_wdata)
     );
     // MEM stage
     mem_stage mem_stage(

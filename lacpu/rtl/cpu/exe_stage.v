@@ -28,25 +28,7 @@ module exe_stage(
     //to lu
     output [`ES_TO_LU_BUS_WD -1:0] es_to_lu_bus  ,
     //from lu
-    input                          lu_to_es_bus  ,
-    //div
-    output [31:0] div_divisor_data      ,
-    output        div_divisor_valid     ,
-    input         div_divisor_ready     ,
-    output [31:0] div_dividend_data     ,
-    output        div_dividend_valid    ,
-    input         div_dividend_ready    ,
-    input         div_dout_valid        ,
-    input  [63:0] div_dout_data         ,
-    //divu
-    output [31:0] divu_divisor_data     ,
-    output        divu_divisor_valid    ,
-    input         divu_divisor_ready    ,
-    output [31:0] divu_dividend_data    ,
-    output        divu_dividend_valid   ,
-    input         divu_dividend_ready   ,
-    input         divu_dout_valid       ,
-    input  [63:0] divu_dout_data
+    input                          lu_to_es_bus
 );
 
     reg         es_valid      ;
@@ -135,6 +117,25 @@ module exe_stage(
     wire        is_div_mod;
 
     wire [31:0] div_mod_result;
+
+    //div
+    wire [31:0] div_divisor_data;
+    wire        div_divisor_valid;
+    wire        div_divisor_ready;
+    wire [31:0] div_dividend_data;
+    wire        div_dividend_valid;
+    wire        div_dividend_ready;
+    wire        div_dout_valid;
+    wire [63:0] div_dout_data;
+    //divu
+    wire [31:0] divu_divisor_data;
+    wire        divu_divisor_valid;
+    wire        divu_divisor_ready;
+    wire [31:0] divu_dividend_data;
+    wire        divu_dividend_valid;
+    wire        divu_dividend_ready;
+    wire        divu_dout_valid;
+    wire [63:0] divu_dout_data;
 
     assign es_result = is_div_mod ? div_mod_result : es_alu_result;
 
@@ -273,6 +274,32 @@ module exe_stage(
             divu_dividend_ready_flag  <= 1'b0;
         end
     end
+
+    //div
+    div div(
+        .aclk                   (clk                ),
+        .s_axis_divisor_tdata   (div_divisor_data   ),
+        .s_axis_divisor_tvalid  (div_divisor_valid  ),
+        .s_axis_divisor_tready  (div_divisor_ready  ),
+        .s_axis_dividend_tdata  (div_dividend_data  ),
+        .s_axis_dividend_tvalid (div_dividend_valid ),
+        .s_axis_dividend_tready (div_dividend_ready ),
+        .m_axis_dout_tvalid     (div_dout_valid     ),
+        .m_axis_dout_tdata      (div_dout_data      )
+    );
+
+    //divu
+    divu divu(
+        .aclk                   (clk                ),
+        .s_axis_divisor_tdata   (divu_divisor_data  ),
+        .s_axis_divisor_tvalid  (divu_divisor_valid ),
+        .s_axis_divisor_tready  (divu_divisor_ready ),
+        .s_axis_dividend_tdata  (divu_dividend_data ),
+        .s_axis_dividend_tvalid (divu_dividend_valid),
+        .s_axis_dividend_tready (divu_dividend_ready),
+        .m_axis_dout_tvalid     (divu_dout_valid    ),
+        .m_axis_dout_tdata      (divu_dout_data     )
+    );
 
     assign div_divisor_valid  = div_divisor_valid_r;
     assign div_dividend_valid  = div_dividend_valid_r;
