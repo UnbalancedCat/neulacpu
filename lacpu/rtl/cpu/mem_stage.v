@@ -1,4 +1,4 @@
-`include "mycpu.v"
+`include "mycpu.vh"
 
 module mem_stage(
     input                          clk            ,

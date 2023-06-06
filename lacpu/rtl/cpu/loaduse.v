@@ -1,4 +1,4 @@
-`include "mycpu.v"
+`include "mycpu.vh"
 
 module loaduse(  
     input  [`DS_TO_LU_BUS_WD -1:0] ds_to_lu_bus,
