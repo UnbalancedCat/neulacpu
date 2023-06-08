@@ -16,10 +16,7 @@ module id_stage(
     //to fs
     input  [`WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus  ,
     //to fw
-    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  ,
-    //to lu
-    output [`DS_TO_LU_BUS_WD -1:0] ds_to_lu_bus
-
+    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  
 );
 
     reg         ds_valid   ;
@@ -139,8 +136,6 @@ module id_stage(
                           };
 
     assign ds_to_fw_bus = {rf_raddr1 , rf_raddr2};
-
-    assign ds_to_lu_bus = {rf_raddr1 , rf_raddr2};
 
     assign ds_ready_go    = 1'b1;
     assign ds_allowin     = !ds_valid || ds_ready_go && es_allowin;

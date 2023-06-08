@@ -24,9 +24,6 @@ module exe_stage(
     input  [`MS_TO_ES_BUS_WD -1:0] ms_to_ds_bus  ,
     //from ws
     input  [`WS_TO_ES_BUS_WD -1:0] ws_to_ds_bus  ,
-    //lu
-    output [`ES_TO_LU_BUS_WD -1:0] es_to_lu_bus  ,
-    input                          lu_to_es_bus  ,
     //div_mul
     output        es_div_enable   ,
     output        es_div_sign     ,
@@ -61,8 +58,6 @@ module exe_stage(
     wire        es_src2_is_es_dest;
     wire        es_src2_is_ms_dest;
     wire        es_data_is_rf_wdata;
-
-    reg         loaduse_r;
 
     assign {es_alu_op       ,   //173:155
             es_src1_is_pc   ,   //154:154
@@ -129,9 +124,7 @@ module exe_stage(
                            es_mem_we     
                            };
 
-    assign es_to_lu_bus  = {es_dest, es_load_op};
-
-    assign es_ready_go    = !(div_stall || loaduse_r);
+    assign es_ready_go    = !(div_stall);
     assign es_allowin     = !es_valid || es_ready_go && ms_allowin;
     assign es_to_ms_valid =  es_valid && es_ready_go;
     always @(posedge clk) begin
@@ -147,18 +140,6 @@ module exe_stage(
         end
         if (ds_to_es_valid && es_allowin) begin
             ds_to_es_bus_r <= ds_to_es_bus;
-        end
-    end
-
-    always @(posedge clk) begin
-        if(reset) begin
-            loaduse_r <= 1'b0;
-        end
-        else if(loaduse_r == 1'b1) begin
-            loaduse_r <= 1'b0;
-        end
-        else begin
-            loaduse_r <= lu_to_es_bus;
         end
     end
 

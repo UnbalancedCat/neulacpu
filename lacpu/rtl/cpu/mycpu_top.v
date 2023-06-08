@@ -44,9 +44,6 @@ module mycpu_top(
     wire [`FW_TO_ES_BUS_WD -1:0] fw_to_es_bus;
     wire [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus;
     wire [`WS_TO_ES_BUS_WD -1:0] ws_to_es_bus;
-    wire [`DS_TO_LU_BUS_WD -1:0] ds_to_lu_bus;
-    wire [`ES_TO_LU_BUS_WD -1:0] es_to_lu_bus;
-    wire                         lu_to_es_bus;
 
     wire        es_div_enable;
     wire        es_div_sign;
@@ -91,9 +88,7 @@ module mycpu_top(
         //to rf: for write back
         .ws_to_rf_bus   (ws_to_rf_bus   ),
         //to fw
-        .ds_to_fw_bus   (ds_to_fw_bus   ),
-        //to lu
-        .ds_to_lu_bus   (ds_to_lu_bus   )
+        .ds_to_fw_bus   (ds_to_fw_bus   )
     );
     // EXE stage
     exe_stage exe_stage(
@@ -116,10 +111,6 @@ module mycpu_top(
         .ms_to_ds_bus   (ms_to_es_bus   ),
         //from ws
         .ws_to_ds_bus   (ws_to_es_bus   ),
-        //to lu
-        .es_to_lu_bus   (es_to_lu_bus   ),
-        //from lu
-        .lu_to_es_bus   (lu_to_es_bus   ),
         // data sram interface
         .data_sram_en   (data_sram_en   ),
         .data_sram_wen  (data_sram_we   ),
@@ -200,12 +191,6 @@ module mycpu_top(
         .es_to_fw_bus   (es_to_fw_bus),
         .ms_to_fw_bus   (ms_to_fw_bus),
         .fw_to_es_bus   (fw_to_es_bus)
-    );
-    //Loaduse
-    loaduse loaduse(
-        .ds_to_lu_bus   (ds_to_lu_bus),
-        .es_to_lu_bus   (es_to_lu_bus),
-        .lu_to_es_bus   (lu_to_es_bus)
     );
 
 endmodule
