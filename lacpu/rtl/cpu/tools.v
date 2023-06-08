@@ -1,3 +1,4 @@
+`default_nettype wire
 module decoder_5_32(
     input  [ 4:0] in,
     output [31:0] out

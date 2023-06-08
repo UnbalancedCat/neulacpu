@@ -54,7 +54,7 @@ module if_stage(
         end
 
         if (reset) begin
-            fs_pc <= 32'h1bffffc;  //to make nextpc be 0x1C000000 during reset 
+            fs_pc <= 32'h1bff_fffc;  //to make nextpc be 0x1c000000 during reset 
         end
         else if (to_fs_valid && fs_allowin) begin
             fs_pc <= nextpc;

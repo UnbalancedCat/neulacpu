@@ -62,7 +62,6 @@ module exe_stage(
     wire        es_src2_is_ms_dest;
     wire        es_data_is_rf_wdata;
 
-    wire        lu_to_es_bus_r;
     reg         loaduse_r;
 
     assign {es_alu_op       ,   //173:155
@@ -106,9 +105,6 @@ module exe_stage(
     wire        es_inst_modw ;
     wire        es_inst_divwu;
     wire        es_inst_modwu; 
-    wire        es_inst_mulw;
-    wire        es_inst_mulhw;
-    wire        es_inst_mulhwu;
     wire [ 1:0] div_op;  
     wire        div_stall;
 
@@ -135,7 +131,7 @@ module exe_stage(
 
     assign es_to_lu_bus  = {es_dest, es_load_op};
 
-    assign es_ready_go    = div_stall || loaduse_r;
+    assign es_ready_go    = !(div_stall || loaduse_r);
     assign es_allowin     = !es_valid || es_ready_go && ms_allowin;
     assign es_to_ms_valid =  es_valid && es_ready_go;
     always @(posedge clk) begin
@@ -146,6 +142,9 @@ module exe_stage(
             es_valid <= ds_to_es_valid;
         end
 
+        if (reset) begin
+            ds_to_es_bus_r <= 0;
+        end
         if (ds_to_es_valid && es_allowin) begin
             ds_to_es_bus_r <= ds_to_es_bus;
         end
@@ -216,8 +215,7 @@ module exe_stage(
                              es_store_op[2]      ?    es_rf_rdata2         :
                                                       32'b0;
 
-    assign br_target =  (^es_branch_op[5:0]) ? (es_pc        + es_imm) :
-                        ( es_branch_op[7:6]) ? (es_pc        + es_imm) :
+    assign br_target =  (|es_branch_op[7:0]) ? (es_alu_result        ) :
                         ( es_branch_op[8]  ) ? (es_rf_rdata1 + es_imm) :
                                                 0;
 

@@ -121,10 +121,6 @@ module id_stage(
     wire [ 4:0] rf_raddr2;
     wire [31:0] rf_rdata2;
 
-    wire        rj_eq_rd;
-    wire        rj_lt_rd;
-    wire        rj_ltu_rd;
-
     assign ds_to_es_bus = {alu_op       ,   //173:155
                            src1_is_pc   ,   //154:154
                            src2_is_imm  ,   //153:153
@@ -158,7 +154,10 @@ module id_stage(
             ds_valid <= fs_to_ds_valid;
         end
 
-        if (fs_to_ds_valid && ds_allowin) begin
+        if (reset) begin
+            fs_to_ds_bus_r <= 0;
+        end
+        else if (fs_to_ds_valid && ds_allowin) begin
             fs_to_ds_bus_r <= fs_to_ds_bus;
         end
     end
@@ -174,54 +173,54 @@ module id_stage(
     decoder_3_8  u_dec2(.in(op[14:12]), .out(op10_d));
     decoder_5_32 u_dec3(.in(ra       ), .out(op17_d));
 
-    assign inst_addw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b00000];
-    assign inst_subw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b00001];
-    assign inst_slt         = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b00100];
-    assign inst_sltu        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b00101];
-    assign inst_nor         = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01000];
-    assign inst_and         = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01001];
-    assign inst_or          = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01010];
-    assign inst_xor         = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01011];
-    assign inst_sllw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01110];
-    assign inst_srlw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b01111];
-    assign inst_sraw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b10000];
-    assign inst_slliw       = (op[21: 5] == 12'b0000_0000_0100) & op17_d[5'b00001];
-    assign inst_srliw       = (op[21: 5] == 12'b0000_0000_0100) & op17_d[5'b01001];
-    assign inst_sraiw       = (op[21: 5] == 12'b0000_0000_0100) & op17_d[5'b10001];
-    assign inst_mulw        = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11000];
-    assign inst_mulhw       = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11001];
-    assign inst_mulhwu      = (op[21: 5] == 12'b0000_0000_0001) & op17_d[5'b11010];
-    assign inst_divw        = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00000];
-    assign inst_modw        = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00001];
-    assign inst_divwu       = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00010];
-    assign inst_modwu       = (op[21: 5] == 12'b0000_0000_0010) & op17_d[5'b00011];
-    assign inst_slti        = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b000];
-    assign inst_sltui       = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b001];
-    assign inst_addiw       = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b010];
-    assign inst_andi        = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b101];
-    assign inst_ori         = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b110];
-    assign inst_xori        = (op[21:11] ==  7'b0000_001      ) & op10_d[3'b111];
-    assign inst_ldb         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b000];
-    assign inst_ldh         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b001];
-    assign inst_ldw         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b010];
-    assign inst_stb         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b100];
-    assign inst_sth         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b101];
-    assign inst_stw         = (op[21:11] ==  7'b0010_100      ) & op10_d[3'b110];
-    assign inst_ldbu        = (op[21:11] ==  7'b0010_101      ) & op10_d[3'b000];
-    assign inst_ldhu        = (op[21:11] ==  7'b0010_101      ) & op10_d[3'b001];
-    assign inst_lu12iw      = (op[21:17] ==  4'b0001          ) &  op7_d[3'b010];
-    assign inst_pcaddu12i   = (op[21:17] ==  4'b0001          ) &  op7_d[3'b110];
-    assign inst_jirl        = (op[21:15] ==  3'b010           ) &  op6_d[3'b011];
-    assign inst_b           = (op[21:15] ==  3'b010           ) &  op6_d[3'b100];
-    assign inst_bl          = (op[21:15] ==  3'b010           ) &  op6_d[3'b101];
-    assign inst_beq         = (op[21:15] ==  3'b010           ) &  op6_d[3'b110];
-    assign inst_bne         = (op[21:15] ==  3'b010           ) &  op6_d[3'b111];
-    assign inst_blt         = (op[21:15] ==  3'b011           ) &  op6_d[3'b000];
-    assign inst_bge         = (op[21:15] ==  3'b011           ) &  op6_d[3'b001];
-    assign inst_bltu        = (op[21:15] ==  3'b011           ) &  op6_d[3'b010];
-    assign inst_bgeu        = (op[21:15] ==  3'b011           ) &  op6_d[3'b011];
+    assign inst_addw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00000];
+    assign inst_subw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00001];
+    assign inst_slt         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00100];
+    assign inst_sltu        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00101];
+    assign inst_nor         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01000];
+    assign inst_and         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01001];
+    assign inst_or          = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01010];
+    assign inst_xor         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01011];
+    assign inst_sllw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01110];
+    assign inst_srlw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01111];
+    assign inst_sraw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b10000];
+    assign inst_slliw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b00001];
+    assign inst_srliw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b01001];
+    assign inst_sraiw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b10001];
+    assign inst_mulw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11000];
+    assign inst_mulhw       = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11001];
+    assign inst_mulhwu      = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11010];
+    assign inst_divw        = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00000];
+    assign inst_modw        = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00001];
+    assign inst_divwu       = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00010];
+    assign inst_modwu       = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00011];
+    assign inst_slti        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b000];
+    assign inst_sltui       = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b001];
+    assign inst_addiw       = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b010];
+    assign inst_andi        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b101];
+    assign inst_ori         = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b110];
+    assign inst_xori        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b111];
+    assign inst_ldb         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b000];
+    assign inst_ldh         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b001];
+    assign inst_ldw         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b010];
+    assign inst_stb         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b100];
+    assign inst_sth         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b101];
+    assign inst_stw         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b110];
+    assign inst_ldbu        = (op[21:15] ==  7'b0010_101      ) & op10_d[3'b000];
+    assign inst_ldhu        = (op[21:15] ==  7'b0010_101      ) & op10_d[3'b001];
+    assign inst_lu12iw      = (op[21:18] ==  4'b0001          ) &  op7_d[3'b010];
+    assign inst_pcaddu12i   = (op[21:18] ==  4'b0001          ) &  op7_d[3'b110];
+    assign inst_jirl        = (op[21:19] ==  3'b010           ) &  op6_d[3'b011];
+    assign inst_b           = (op[21:19] ==  3'b010           ) &  op6_d[3'b100];
+    assign inst_bl          = (op[21:19] ==  3'b010           ) &  op6_d[3'b101];
+    assign inst_beq         = (op[21:19] ==  3'b010           ) &  op6_d[3'b110];
+    assign inst_bne         = (op[21:19] ==  3'b010           ) &  op6_d[3'b111];
+    assign inst_blt         = (op[21:19] ==  3'b011           ) &  op6_d[3'b000];
+    assign inst_bge         = (op[21:19] ==  3'b011           ) &  op6_d[3'b001];
+    assign inst_bltu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b010];
+    assign inst_bgeu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b011];
 
-    assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw | inst_bl | inst_jirl;
+    assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw | inst_bl | inst_jirl | inst_b;
     assign alu_op[ 1] = inst_subw;
     assign alu_op[ 2] = inst_slt    | inst_slti;
     assign alu_op[ 3] = inst_sltu   | inst_sltui;
@@ -248,12 +247,12 @@ module id_stage(
                     | {32{inst_slliw  | inst_srliw | inst_sraiw}} & { 27'b0         , rk}
                     | {32{inst_b      | inst_bl}}                 & {{4{ds_inst[9]}}, ds_inst[9:0], ds_inst[25:10], 2'b0};
 
-    assign src1_is_pc   = inst_bl        | inst_jirl   | inst_pcaddu12i;
+    assign src1_is_pc   = inst_bl        | inst_jirl   | inst_pcaddu12i | inst_b;
     assign src2_is_4    = inst_bl        | inst_jirl;
-    assign src2_is_imm  = inst_addiw     | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu;
+    assign src2_is_imm  = inst_addiw     | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu | inst_b | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu;
     assign dst_is_r1    = inst_bl;
 
-    assign reg_we       = ~(inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu | inst_b | inst_stw | inst_sth | inst_stb);
+    assign reg_we       = ~(inst_b   | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu | inst_stw | inst_sth | inst_stb);
     assign mem_we       =   inst_stw | inst_sth | inst_stb;
     assign mem_to_reg   =   inst_ldw | inst_ldh | inst_ldb | inst_ldhu | inst_ldbu;
     assign load_op      =  {inst_ldhu, inst_ldbu, inst_ldw, inst_ldh, inst_ldb};

@@ -87,6 +87,9 @@ module mem_stage(
             ms_valid <= es_to_ms_valid;
         end
 
+        if (reset) begin
+            es_to_ms_bus_r <= 0;
+        end
         if (es_to_ms_valid && ms_allowin) begin
             es_to_ms_bus_r  <= es_to_ms_bus;
         end
@@ -106,15 +109,15 @@ module mem_stage(
                              ms_div_op[1]  ? mod_result :
                                              ms_alu_result;
 
-    assign br_taken  = (   ms_branch_op[0]  &&  ms_Zero
-                        || ms_branch_op[1]  && !ms_Zero 
-                        || ms_branch_op[2]  && (ms_Sign != ms_Overflow)
-                        || ms_branch_op[3]  && (ms_Zero | (ms_Sign == ms_Overflow))
-                        || ms_branch_op[4]  &&  ms_Carry
-                        || ms_branch_op[5]  && (ms_Zero | ~ms_Carry               )
-                        || ms_branch_op[6]
-                        || ms_branch_op[7]
-                        || ms_branch_op[8]);
+    assign br_taken  = (  ms_branch_op[0]  &  ms_Zero
+                        | ms_branch_op[1]  & !ms_Zero 
+                        | ms_branch_op[2]  & (ms_Sign != ms_Overflow)
+                        | ms_branch_op[3]  & (ms_Zero | (ms_Sign == ms_Overflow))
+                        | ms_branch_op[4]  &  ms_Carry
+                        | ms_branch_op[5]  & (ms_Zero | ~ms_Carry               )
+                        | ms_branch_op[6]
+                        | ms_branch_op[7]
+                        | ms_branch_op[8]);
 
 
 endmodule

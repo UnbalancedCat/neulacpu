@@ -52,7 +52,10 @@ module wb_stage(
         else if (ws_allowin) begin
             ws_valid <= ms_to_ws_valid;
         end
-
+        
+        if (reset) begin
+            ms_to_ws_bus_r <= 0;
+        end
         if (ms_to_ws_valid && ws_allowin) begin
             ms_to_ws_bus_r <= ms_to_ws_bus;
         end
