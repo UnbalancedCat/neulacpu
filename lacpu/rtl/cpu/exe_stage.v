@@ -45,7 +45,6 @@ module exe_stage(
     wire        es_mem_we;
     wire [ 4:0] es_load_op;
     wire [ 2:0] es_store_op;
-    wire [ 8:0] es_branch_op;
     wire [ 4:0] es_dest;
     wire [31:0] es_imm;
     wire [31:0] es_pc;
@@ -59,16 +58,15 @@ module exe_stage(
     wire        es_src2_is_ms_dest;
     wire        es_data_is_rf_wdata;
 
-    assign {es_alu_op       ,   //173:155
-            es_src1_is_pc   ,   //154:154
-            es_src2_is_imm  ,   //153:153
-            es_src2_is_4    ,   //152:152
-            es_mem_to_reg   ,   //151:151
-            es_reg_we       ,   //150:150
-            es_mem_we       ,   //149:149
-            es_load_op      ,   //148:142
-            es_store_op     ,   //141:141
-            es_branch_op    ,   //141:133
+    assign {es_alu_op       ,   //159:141
+            es_src1_is_pc   ,   //140:140
+            es_src2_is_imm  ,   //139:139
+            es_src2_is_4    ,   //138:138
+            es_mem_to_reg   ,   //137:137
+            es_reg_we       ,   //136:136
+            es_mem_we       ,   //135:135
+            es_load_op      ,   //134:134
+            es_store_op     ,   //133:133
             es_dest         ,   //132:128
             es_imm          ,   //127:96
             es_rf_rdata1    ,   //95 :64
@@ -86,8 +84,6 @@ module exe_stage(
     assign ms_alu_result = ms_to_ds_bus;
     assign ws_rf_wdata   = ws_to_ds_bus;    
 
-    wire [31:0] br_target;
-
     wire [31:0] es_alu_src1  ;
     wire [31:0] es_alu_src2  ;
     wire [31:0] es_alu_result;
@@ -103,19 +99,13 @@ module exe_stage(
     wire [ 1:0] div_op;  
     wire        div_stall;
 
-    assign es_to_ms_bus = {div_op           ,   //122:121
-                           br_target        ,   //120:89
-                           es_branch_op     ,   //88 :80  
-                           es_Carry         ,   //79 :79
-                           es_Sign          ,   //78 :78
-                           es_Overflow      ,   //77 :77
-                           es_Zero          ,   //76 :76
-                           es_load_op       ,   //75 :71
-                           es_mem_to_reg    ,   //70 :70
-                           es_reg_we        ,   //69 :69
-                           es_dest          ,   //68 :64
-                           es_alu_result    ,   //63 :32
-                           es_pc                //31 :0 
+    assign es_to_ms_bus = {div_op           ,   //77:76
+                           es_load_op       ,   //75:71
+                           es_mem_to_reg    ,   //70:70
+                           es_reg_we        ,   //69:69
+                           es_dest          ,   //68:64
+                           es_alu_result    ,   //63:32
+                           es_pc                //31:0 
                           };
 
     assign es_to_fw_bus = {es_rf_rdata2 , 
@@ -163,7 +153,7 @@ module exe_stage(
 
     assign es_div_enable = (div_op[0] | div_op[1]) & es_valid;
 
-    assign es_div_sign = es_inst_divw | es_inst_modw;
+    assign es_div_sign   = es_inst_divw | es_inst_modw;
 
     assign div_stall     = es_div_enable & ~div_complete;
 
@@ -171,12 +161,7 @@ module exe_stage(
         .alu_op     (es_alu_op[14:0]),
         .alu_src1   (es_alu_src1  ),
         .alu_src2   (es_alu_src2  ),
-        .alu_result (es_alu_result),
-
-        .Carry      (es_Carry    ),
-        .Sign       (es_Sign     ),
-        .Overflow   (es_Overflow ),   
-        .Zero       (es_Zero     )
+        .alu_result (es_alu_result)
         );
 
     assign data_sram_en    = 1'b1;
@@ -195,9 +180,5 @@ module exe_stage(
                              es_store_op[1]      ? {2{es_rf_rdata2[15:0]}} :
                              es_store_op[2]      ?    es_rf_rdata2         :
                                                       32'b0;
-
-    assign br_target =  (|es_branch_op[7:0]) ? (es_alu_result        ) :
-                        ( es_branch_op[8]  ) ? (es_rf_rdata1 + es_imm) :
-                                                0;
 
 endmodule

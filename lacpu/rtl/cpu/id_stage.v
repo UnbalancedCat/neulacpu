@@ -13,10 +13,12 @@ module id_stage(
     //to es
     output                         ds_to_es_valid,
     output [`DS_TO_ES_BUS_WD -1:0] ds_to_es_bus  ,
-    //to fs
+    //to rf
     input  [`WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus  ,
     //to fw
-    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  
+    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  ,
+    //to fs
+    output [`BR_BUS_WD       -1:0] br_bus
 );
 
     reg         ds_valid   ;
@@ -48,7 +50,6 @@ module id_stage(
     wire        mem_we;
     wire [ 4:0] load_op;
     wire [ 2:0] store_op;
-    wire [ 8:0] branch_op;
     wire [ 4:0] dest;
     wire [31:0] imm;
 
@@ -109,8 +110,6 @@ module id_stage(
     wire        inst_divwu;
     wire        inst_modwu;
 
-
-
     wire        dst_is_r1;   
 
     wire [ 4:0] rf_raddr1;
@@ -118,16 +117,21 @@ module id_stage(
     wire [ 4:0] rf_raddr2;
     wire [31:0] rf_rdata2;
 
-    assign ds_to_es_bus = {alu_op       ,   //173:155
-                           src1_is_pc   ,   //154:154
-                           src2_is_imm  ,   //153:153
-                           src2_is_4    ,   //152:152
-                           mem_to_reg   ,   //151:151
-                           reg_we       ,   //150:150
-                           mem_we       ,   //149:149
-                           load_op      ,   //148:142
-                           store_op     ,   //141:141
-                           branch_op    ,   //141:133
+    wire        rj_eq_rd;
+    wire        rj_lt_rd_unsign;
+    wire        rj_lt_rd_sign;
+    wire        br_taken;
+    wire [31:0] br_target;
+
+    assign ds_to_es_bus = {alu_op       ,   //159:141
+                           src1_is_pc   ,   //140:140
+                           src2_is_imm  ,   //139:139
+                           src2_is_4    ,   //138:138
+                           mem_to_reg   ,   //137:137
+                           reg_we       ,   //136:136
+                           mem_we       ,   //135:135
+                           load_op      ,   //134:134
+                           store_op     ,   //133:133
                            dest         ,   //132:128
                            imm          ,   //127:96
                            rf_rdata1    ,   //95 :64
@@ -135,10 +139,12 @@ module id_stage(
                            ds_pc            //31 :0
                           };
 
-    assign ds_to_fw_bus = {rf_raddr1 , rf_raddr2};
+    assign ds_to_fw_bus = {rf_raddr1 ,
+                           rf_raddr2
+                          };
 
     assign ds_ready_go    = 1'b1;
-    assign ds_allowin     = !ds_valid || ds_ready_go && es_allowin;
+    assign ds_allowin     = (!ds_valid || ds_ready_go && es_allowin);
     assign ds_to_es_valid = ds_valid && ds_ready_go;
     always @(posedge clk) begin
 
@@ -215,7 +221,7 @@ module id_stage(
     assign inst_bltu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b010];
     assign inst_bgeu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b011];
 
-    assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw | inst_bl | inst_jirl | inst_b;
+    assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw;
     assign alu_op[ 1] = inst_subw;
     assign alu_op[ 2] = inst_slt    | inst_slti;
     assign alu_op[ 3] = inst_sltu   | inst_sltui;
@@ -242,9 +248,9 @@ module id_stage(
                     | {32{inst_slliw  | inst_srliw | inst_sraiw}} & { 27'b0         , rk}
                     | {32{inst_b      | inst_bl}}                 & {{4{ds_inst[9]}}, ds_inst[9:0], ds_inst[25:10], 2'b0};
 
-    assign src1_is_pc   = inst_bl        | inst_jirl   | inst_pcaddu12i | inst_b;
-    assign src2_is_4    = inst_bl        | inst_jirl;
-    assign src2_is_imm  = inst_addiw     | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu | inst_b | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu;
+    assign src1_is_pc   = inst_bl    | inst_jirl   | inst_pcaddu12i | inst_b;
+    assign src2_is_4    = inst_bl    | inst_jirl;
+    assign src2_is_imm  = inst_addiw | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu | inst_b | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu;
     assign dst_is_r1    = inst_bl;
 
     assign reg_we       = ~(inst_b   | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu | inst_stw | inst_sth | inst_stb);
@@ -252,7 +258,6 @@ module id_stage(
     assign mem_to_reg   =   inst_ldw | inst_ldh | inst_ldb | inst_ldhu | inst_ldbu;
     assign load_op      =  {inst_ldhu, inst_ldbu, inst_ldw, inst_ldh, inst_ldb};
     assign store_op     =  {inst_stw , inst_sth , inst_stb};
-    assign branch_op    =  {inst_jirl, inst_bl  , inst_b  , inst_bgeu, inst_bltu, inst_bge, inst_blt, inst_bne, inst_beq};
 
     assign dest         = dst_is_r1 ? 5'd1 :
                                       rd;
@@ -270,4 +275,22 @@ module id_stage(
         .wdata  (rf_wdata )
         );
 
+    assign rj_eq_rd        = (rf_rdata1 == rf_rdata2);
+    assign rj_lt_rd_unsign = (rf_rdata1 <  rf_rdata2);
+    assign rj_lt_rd_sign   = (rf_rdata1[31] && ~rf_rdata2[31]) ? 1'b1 :
+                             (~rf_rdata1[31] && rf_rdata2[31]) ? 1'b0 : rj_lt_rd_unsign;                                                                                     
+    assign br_taken  = (   inst_beq  &&  rj_eq_rd
+                        || inst_bne  && !rj_eq_rd
+                        || inst_blt  &&  rj_lt_rd_sign
+                        || inst_bge  && !rj_lt_rd_sign
+                        || inst_bltu &&  rj_lt_rd_unsign
+                        || inst_bgeu && !rj_lt_rd_unsign
+                        || inst_jirl
+                        || inst_bl
+                        || inst_b
+                        ); 
+    assign br_target = ({32{inst_beq || inst_bne || inst_bl || inst_b || inst_blt || inst_bge || inst_bltu || inst_bgeu}} & (ds_pc + imm))
+                     | ({32{inst_jirl}}                                                                                   & (rf_rdata1 + imm)) ;
+
+    assign br_bus = {br_taken, br_target};
 endmodule

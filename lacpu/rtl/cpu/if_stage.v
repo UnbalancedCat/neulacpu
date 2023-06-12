@@ -29,12 +29,12 @@ module if_stage(
 
     wire         br_taken;
     wire [ 31:0] br_target;
-    assign {br_taken,br_target} = br_bus;
+    assign {br_taken, br_target} = br_bus;
 
     wire [31:0] fs_inst;
     reg  [31:0] fs_pc;
     assign fs_to_ds_bus = {fs_inst ,
-                        fs_pc   };
+                           fs_pc   };
 
     // pre-IF stage
     assign to_fs_valid  = ~reset;

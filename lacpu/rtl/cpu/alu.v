@@ -2,12 +2,7 @@ module alu(
   input  [14:0] alu_op    ,
   input  [31:0] alu_src1  ,
   input  [31:0] alu_src2  ,
-  output [31:0] alu_result ,
-
-  output        Carry     ,
-  output        Sign      ,
-  output        Overflow  ,
-  output        Zero
+  output [31:0] alu_result
 );
 
   wire op_add;
@@ -117,11 +112,5 @@ module alu(
                     | ({32{op_sll                 }} & sll_result)
                     | ({32{op_srl|op_sra          }} & sr_result)
                     | ({32{op_mul|op_mulh|op_mulhu}} & mul_result);
-  assign Carry      = op_sub ^ adder_cout;
-  assign Sign       = alu_result[31];
-  assign Overflow   = (op_add|op_sub) ?  ( adder_a[31] &  adder_b[31] &  adder_cout) 
-                                       | (~adder_a[31] & ~adder_b[31] & ~adder_cout) 
-                                       : 1'b0;
-  assign Zero       = (alu_result == 32'b0);
   
 endmodule

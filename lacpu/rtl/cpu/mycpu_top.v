@@ -88,7 +88,9 @@ module mycpu_top(
         //to rf: for write back
         .ws_to_rf_bus   (ws_to_rf_bus   ),
         //to fw
-        .ds_to_fw_bus   (ds_to_fw_bus   )
+        .ds_to_fw_bus   (ds_to_fw_bus   ),
+        //to fs
+        .br_bus         (br_bus         )
     );
     // EXE stage
     exe_stage exe_stage(
@@ -149,8 +151,6 @@ module mycpu_top(
         //to ws
         .ms_to_ws_valid (ms_to_ws_valid ),
         .ms_to_ws_bus   (ms_to_ws_bus   ),
-        //to fs
-        .br_bus         (br_bus         ),
         //from data-sram
         .data_sram_rdata(data_sram_rdata),
         //to fw

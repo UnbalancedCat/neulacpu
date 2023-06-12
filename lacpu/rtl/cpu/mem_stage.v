@@ -12,8 +12,6 @@ module mem_stage(
     //to ws
     output                         ms_to_ws_valid ,
     output [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus   ,
-    //to fs
-    output [`BR_BUS_WD       -1:0] br_bus         ,
     //from data-sram
     input  [31                 :0] data_sram_rdata,
     //to fw
@@ -29,8 +27,6 @@ module mem_stage(
     wire        ms_ready_go;
 
     reg [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus_r;
-    wire [31:0] br_target;
-    wire [ 8:0] ms_branch_op;
     wire [ 4:0] ms_load_op;
     wire [ 2:0] ms_store_op;
     wire        ms_mem_to_reg;
@@ -39,32 +35,19 @@ module mem_stage(
     wire [31:0] ms_alu_result;
     wire [31:0] ms_pc;
     wire [ 1:0] ms_div_op;
-    wire        ms_Carry     ;
-    wire        ms_Sign      ;
-    wire        ms_Overflow  ;
-    wire        ms_Zero      ;  
 
-    assign {ms_div_op        ,   //122:121
-            br_target        ,   //120:89
-            ms_branch_op     ,   //88 :80  
-            ms_Carry         ,   //79 :79
-            ms_Sign          ,   //78 :78
-            ms_Overflow      ,   //77 :77
-            ms_Zero          ,   //76 :76
-            ms_load_op       ,   //75 :71
-            ms_mem_to_reg    ,   //70 :70
-            ms_reg_we        ,   //69 :69
-            ms_dest          ,   //68 :64
-            ms_alu_result    ,   //63 :32
-            ms_pc                //31 :0 
+    assign {ms_div_op        ,   //77:76
+            ms_load_op       ,   //75:71
+            ms_mem_to_reg    ,   //70:70
+            ms_reg_we        ,   //69:69
+            ms_dest          ,   //68:64
+            ms_alu_result    ,   //63:32
+            ms_pc                //31:0 
         } = es_to_ms_bus_r;
-
-    wire        br_taken;
     
     wire [31:0] mem_result;
     wire [31:0] ms_final_result;
 
-    assign br_bus       = {br_taken, br_target};
 
     assign ms_to_ws_bus = {ms_reg_we      ,  //69:69
                            ms_dest        ,  //68:64
@@ -108,16 +91,5 @@ module mem_stage(
                              ms_div_op[0]  ? div_result :
                              ms_div_op[1]  ? mod_result :
                                              ms_alu_result;
-
-    assign br_taken  = (  ms_branch_op[0]  &  ms_Zero
-                        | ms_branch_op[1]  & !ms_Zero 
-                        | ms_branch_op[2]  & (ms_Sign != ms_Overflow)
-                        | ms_branch_op[3]  & (ms_Zero | (ms_Sign == ms_Overflow))
-                        | ms_branch_op[4]  &  ms_Carry
-                        | ms_branch_op[5]  & (ms_Zero | ~ms_Carry               )
-                        | ms_branch_op[6]
-                        | ms_branch_op[7]
-                        | ms_branch_op[8]);
-
 
 endmodule
