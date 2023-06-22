@@ -11,18 +11,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0fs"></ZoomStartTime>
-      <ZoomEndTime time="1405001fs"></ZoomEndTime>
-      <Cursor1Time time="72434fs"></Cursor1Time>
+      <ZoomStartTime time="1430fs"></ZoomStartTime>
+      <ZoomEndTime time="71981fs"></ZoomEndTime>
+      <Cursor1Time time="25000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="316"></NameColumnWidth>
-      <ValueColumnWidth column_width="375"></ValueColumnWidth>
+      <ValueColumnWidth column_width="369"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="3" />
    <wave_markers>
-      <marker time="45000" label="" />
       <marker time="75000" label="" />
+      <marker time="45000" label="" />
    </wave_markers>
    <wvobject fp_name="group7" type="group">
       <obj_property name="label">debug</obj_property>
@@ -59,6 +59,7 @@
       <wvobject fp_name="group8" type="group">
          <obj_property name="label">if_stage</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/if_stage/clk" type="logic">
             <obj_property name="ElementShortName">clk</obj_property>
             <obj_property name="ObjectShortName">clk</obj_property>
@@ -147,6 +148,7 @@
       <wvobject fp_name="group10" type="group">
          <obj_property name="label">id_stage</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/clk" type="logic">
             <obj_property name="ElementShortName">clk</obj_property>
             <obj_property name="ObjectShortName">clk</obj_property>
@@ -176,8 +178,8 @@
             <obj_property name="ObjectShortName">ds_to_es_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/ds_to_es_bus" type="array">
-            <obj_property name="ElementShortName">ds_to_es_bus[173:0]</obj_property>
-            <obj_property name="ObjectShortName">ds_to_es_bus[173:0]</obj_property>
+            <obj_property name="ElementShortName">ds_to_es_bus[159:0]</obj_property>
+            <obj_property name="ObjectShortName">ds_to_es_bus[159:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/ws_to_rf_bus" type="array">
             <obj_property name="ElementShortName">ws_to_rf_bus[37:0]</obj_property>
@@ -194,6 +196,14 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/ds_ready_go" type="logic">
             <obj_property name="ElementShortName">ds_ready_go</obj_property>
             <obj_property name="ObjectShortName">ds_ready_go</obj_property>
+         </wvobject>
+         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/if_stage/br_taken" type="logic">
+            <obj_property name="ElementShortName">br_taken</obj_property>
+            <obj_property name="ObjectShortName">br_taken</obj_property>
+         </wvobject>
+         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/if_stage/br_target" type="array">
+            <obj_property name="ElementShortName">br_target[31:0]</obj_property>
+            <obj_property name="ObjectShortName">br_target[31:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/fs_pc" type="array">
             <obj_property name="ElementShortName">fs_pc[31:0]</obj_property>
@@ -263,10 +273,6 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/store_op" type="array">
             <obj_property name="ElementShortName">store_op[2:0]</obj_property>
             <obj_property name="ObjectShortName">store_op[2:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/branch_op" type="array">
-            <obj_property name="ElementShortName">branch_op[8:0]</obj_property>
-            <obj_property name="ObjectShortName">branch_op[8:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/id_stage/dest" type="array">
             <obj_property name="ElementShortName">dest[4:0]</obj_property>
@@ -521,6 +527,7 @@
       <wvobject fp_name="group11" type="group">
          <obj_property name="label">exe_stage</obj_property>
          <obj_property name="DisplayName">label</obj_property>
+         <obj_property name="isExpanded"></obj_property>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/clk" type="logic">
             <obj_property name="ElementShortName">clk</obj_property>
             <obj_property name="ObjectShortName">clk</obj_property>
@@ -542,16 +549,16 @@
             <obj_property name="ObjectShortName">ds_to_es_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/ds_to_es_bus" type="array">
-            <obj_property name="ElementShortName">ds_to_es_bus[173:0]</obj_property>
-            <obj_property name="ObjectShortName">ds_to_es_bus[173:0]</obj_property>
+            <obj_property name="ElementShortName">ds_to_es_bus[159:0]</obj_property>
+            <obj_property name="ObjectShortName">ds_to_es_bus[159:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_to_ms_valid" type="logic">
             <obj_property name="ElementShortName">es_to_ms_valid</obj_property>
             <obj_property name="ObjectShortName">es_to_ms_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_to_ms_bus" type="array">
-            <obj_property name="ElementShortName">es_to_ms_bus[122:0]</obj_property>
-            <obj_property name="ObjectShortName">es_to_ms_bus[122:0]</obj_property>
+            <obj_property name="ElementShortName">es_to_ms_bus[77:0]</obj_property>
+            <obj_property name="ObjectShortName">es_to_ms_bus[77:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/data_sram_en" type="logic">
             <obj_property name="ElementShortName">data_sram_en</obj_property>
@@ -614,8 +621,8 @@
             <obj_property name="ObjectShortName">es_ready_go</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/ds_to_es_bus_r" type="array">
-            <obj_property name="ElementShortName">ds_to_es_bus_r[173:0]</obj_property>
-            <obj_property name="ObjectShortName">ds_to_es_bus_r[173:0]</obj_property>
+            <obj_property name="ElementShortName">ds_to_es_bus_r[159:0]</obj_property>
+            <obj_property name="ObjectShortName">ds_to_es_bus_r[159:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_alu_op" type="array">
             <obj_property name="ElementShortName">es_alu_op[18:0]</obj_property>
@@ -652,10 +659,6 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_store_op" type="array">
             <obj_property name="ElementShortName">es_store_op[2:0]</obj_property>
             <obj_property name="ObjectShortName">es_store_op[2:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_branch_op" type="array">
-            <obj_property name="ElementShortName">es_branch_op[8:0]</obj_property>
-            <obj_property name="ObjectShortName">es_branch_op[8:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_dest" type="array">
             <obj_property name="ElementShortName">es_dest[4:0]</obj_property>
@@ -699,10 +702,6 @@
             <obj_property name="ElementShortName">es_data_is_rf_wdata</obj_property>
             <obj_property name="ObjectShortName">es_data_is_rf_wdata</obj_property>
          </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/br_target" type="array">
-            <obj_property name="ElementShortName">br_target[31:0]</obj_property>
-            <obj_property name="ObjectShortName">br_target[31:0]</obj_property>
-         </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_alu_src1" type="array">
             <obj_property name="ElementShortName">es_alu_src1[31:0]</obj_property>
             <obj_property name="ObjectShortName">es_alu_src1[31:0]</obj_property>
@@ -714,22 +713,6 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_alu_result" type="array">
             <obj_property name="ElementShortName">es_alu_result[31:0]</obj_property>
             <obj_property name="ObjectShortName">es_alu_result[31:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_Carry" type="logic">
-            <obj_property name="ElementShortName">es_Carry</obj_property>
-            <obj_property name="ObjectShortName">es_Carry</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_Sign" type="logic">
-            <obj_property name="ElementShortName">es_Sign</obj_property>
-            <obj_property name="ObjectShortName">es_Sign</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_Overflow" type="logic">
-            <obj_property name="ElementShortName">es_Overflow</obj_property>
-            <obj_property name="ObjectShortName">es_Overflow</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_Zero" type="logic">
-            <obj_property name="ElementShortName">es_Zero</obj_property>
-            <obj_property name="ObjectShortName">es_Zero</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/exe_stage/es_inst_divw" type="logic">
             <obj_property name="ElementShortName">es_inst_divw</obj_property>
@@ -780,8 +763,8 @@
             <obj_property name="ObjectShortName">es_to_ms_valid</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/es_to_ms_bus" type="array">
-            <obj_property name="ElementShortName">es_to_ms_bus[122:0]</obj_property>
-            <obj_property name="ObjectShortName">es_to_ms_bus[122:0]</obj_property>
+            <obj_property name="ElementShortName">es_to_ms_bus[77:0]</obj_property>
+            <obj_property name="ObjectShortName">es_to_ms_bus[77:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_to_ws_valid" type="logic">
             <obj_property name="ElementShortName">ms_to_ws_valid</obj_property>
@@ -790,10 +773,6 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_to_ws_bus" type="array">
             <obj_property name="ElementShortName">ms_to_ws_bus[69:0]</obj_property>
             <obj_property name="ObjectShortName">ms_to_ws_bus[69:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/br_bus" type="array">
-            <obj_property name="ElementShortName">br_bus[32:0]</obj_property>
-            <obj_property name="ObjectShortName">br_bus[32:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/data_sram_rdata" type="array">
             <obj_property name="ElementShortName">data_sram_rdata[31:0]</obj_property>
@@ -824,24 +803,12 @@
             <obj_property name="ObjectShortName">ms_ready_go</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/es_to_ms_bus_r" type="array">
-            <obj_property name="ElementShortName">es_to_ms_bus_r[122:0]</obj_property>
-            <obj_property name="ObjectShortName">es_to_ms_bus_r[122:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/br_target" type="array">
-            <obj_property name="ElementShortName">br_target[31:0]</obj_property>
-            <obj_property name="ObjectShortName">br_target[31:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_branch_op" type="array">
-            <obj_property name="ElementShortName">ms_branch_op[8:0]</obj_property>
-            <obj_property name="ObjectShortName">ms_branch_op[8:0]</obj_property>
+            <obj_property name="ElementShortName">es_to_ms_bus_r[77:0]</obj_property>
+            <obj_property name="ObjectShortName">es_to_ms_bus_r[77:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_load_op" type="array">
             <obj_property name="ElementShortName">ms_load_op[4:0]</obj_property>
             <obj_property name="ObjectShortName">ms_load_op[4:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_store_op" type="array">
-            <obj_property name="ElementShortName">ms_store_op[2:0]</obj_property>
-            <obj_property name="ObjectShortName">ms_store_op[2:0]</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_mem_to_reg" type="logic">
             <obj_property name="ElementShortName">ms_mem_to_reg</obj_property>
@@ -866,26 +833,6 @@
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_div_op" type="array">
             <obj_property name="ElementShortName">ms_div_op[1:0]</obj_property>
             <obj_property name="ObjectShortName">ms_div_op[1:0]</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_Carry" type="logic">
-            <obj_property name="ElementShortName">ms_Carry</obj_property>
-            <obj_property name="ObjectShortName">ms_Carry</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_Sign" type="logic">
-            <obj_property name="ElementShortName">ms_Sign</obj_property>
-            <obj_property name="ObjectShortName">ms_Sign</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_Overflow" type="logic">
-            <obj_property name="ElementShortName">ms_Overflow</obj_property>
-            <obj_property name="ObjectShortName">ms_Overflow</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/ms_Zero" type="logic">
-            <obj_property name="ElementShortName">ms_Zero</obj_property>
-            <obj_property name="ObjectShortName">ms_Zero</obj_property>
-         </wvobject>
-         <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/br_taken" type="logic">
-            <obj_property name="ElementShortName">br_taken</obj_property>
-            <obj_property name="ObjectShortName">br_taken</obj_property>
          </wvobject>
          <wvobject fp_name="/cpu_tb/u_soc_top/cpu/mem_stage/mem_result" type="array">
             <obj_property name="ElementShortName">mem_result[31:0]</obj_property>

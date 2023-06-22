@@ -1,184 +1,226 @@
-`include "mycpu.vh"
+module exe_stage
+#(
+    parameter BR_BUS_WD = 33,
+    parameter DS_TO_ES_BUS_WD = 206,
+    parameter ES_TO_MS_BUS_WD = 175,
+    parameter MS_TO_ES_BUS_WD = 38,
+    parameter WS_TO_ES_BUS_WD = 38
+)
+(
+    input         clk,
+    input         reset,
+    input         flush,
+    input  [ 5:0] stall,
 
-module exe_stage(
-    input                          clk           ,
-    input                          reset         ,
-    //allowin
-    input                          ms_allowin    ,
-    output                         es_allowin    ,
-    //from ds
-    input                          ds_to_es_valid,
-    input  [`DS_TO_ES_BUS_WD -1:0] ds_to_es_bus  ,
-    //to ms
-    output                         es_to_ms_valid,
-    output [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus  ,
-    // data sram interface
-    output        data_sram_en   ,
-    output [ 3:0] data_sram_wen  ,
-    output [31:0] data_sram_addr ,
-    output [31:0] data_sram_wdata,
-    //fw
-    output [`ES_TO_FW_BUS_WD -1:0] es_to_fw_bus  ,
-    input  [`FW_TO_ES_BUS_WD -1:0] fw_to_es_bus  ,
-    //from ms
-    input  [`MS_TO_ES_BUS_WD -1:0] ms_to_ds_bus  ,
-    //from ws
-    input  [`WS_TO_ES_BUS_WD -1:0] ws_to_ds_bus  ,
-    //div_mul
-    output        es_div_enable   ,
-    output        es_div_sign     ,
-    output [31:0] es_rf_rdata1    ,
-    output [31:0] es_rf_rdata2    ,
-    input         div_complete
+    output        stallreq_es,
+
+    input  [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus,    
+    output [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,    
+    input  [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,    
+    input  [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
+
+    output [BR_BUS_WD       -1:0] br_bus,
+
+    output        data_sram_en,
+    output [ 7:0] data_sram_we,
+    output [31:0] data_sram_addr,
+    output [31:0] data_sram_wdata
 );
 
-    reg         es_valid      ;
-    wire        es_ready_go   ;
+    reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
 
-    reg  [`DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
-    wire [18:0] es_alu_op;
-    wire        es_src1_is_pc;
-    wire        es_src2_is_imm;
-    wire        es_src2_is_4;
-    wire        es_mem_to_reg;
-    wire        es_reg_we;
-    wire        es_mem_we;
-    wire [ 4:0] es_load_op;
-    wire [ 2:0] es_store_op;
-    wire [ 4:0] es_dest;
-    wire [31:0] es_imm;
+    wire [ 6:0] csr_op;
+    wire        csr_wdata_sel;
+    wire [13:0] csr_addr;
+    wire        csr_we;
+    wire [11:0] alu_op;
+    wire [ 3:0] mul_div_op;
+    wire        mul_div_sign;
+    wire [ 8:0] branch_op;
+    wire [ 2:0] store_op;
+    wire [ 5:0] load_op;
+    wire        reg_we;
+    wire        src1_is_pc;
+    wire        src2_is_imm;
+    wire        src2_is_4;
+    wire [ 4:0] rj;
+    wire [ 4:0] rkd;
+    wire [31:0] rj_value;
+    wire [31:0] rkd_value;
+    wire [ 4:0] dest;
+    wire [31:0] imm;
     wire [31:0] es_pc;
+    wire [31:0] inst;
 
-    wire [31:0] ms_alu_result;
-    wire [31:0] ws_rf_wdata;
+    wire        ms_reg_we;
+    wire [ 4:0] ms_dest;
+    wire [31:0] ms_result;
+    wire        ws_reg_we;
+    wire [ 4:0] ws_dest;
+    wire [31:0] ws_result;
 
-    wire        es_src1_is_es_dest;
-    wire        es_src1_is_ms_dest;
-    wire        es_src2_is_es_dest;
-    wire        es_src2_is_ms_dest;
-    wire        es_data_is_rf_wdata;
+    wire [31:0] src1;
+    wire [31:0] src2;
+    wire [31:0] alu_src1;
+    wire [31:0] alu_src2;
+    wire [31:0] alu_result;
 
-    assign {es_alu_op       ,   //159:141
-            es_src1_is_pc   ,   //140:140
-            es_src2_is_imm  ,   //139:139
-            es_src2_is_4    ,   //138:138
-            es_mem_to_reg   ,   //137:137
-            es_reg_we       ,   //136:136
-            es_mem_we       ,   //135:135
-            es_load_op      ,   //134:134
-            es_store_op     ,   //133:133
-            es_dest         ,   //132:128
-            es_imm          ,   //127:96
-            es_rf_rdata1    ,   //95 :64
-            es_rf_rdata2    ,   //63 :32
-            es_pc               //31 :0
-            } = ds_to_es_bus_r;
+    wire        br_taken;
+    wire [31:0] br_target;
 
-    assign {es_src1_is_es_dest ,
-            es_src1_is_ms_dest ,
-            es_src2_is_es_dest ,
-            es_src2_is_ms_dest ,
-            es_data_is_rf_wdata
-            } = fw_to_es_bus;
+    wire        data_sram_en_temp;
 
-    assign ms_alu_result = ms_to_ds_bus;
-    assign ws_rf_wdata   = ws_to_ds_bus;    
+    wire        stallreq_for_mul_div;
+    wire [31:0] mul_div_result;
+    wire [31:0] es_result;
 
-    wire [31:0] es_alu_src1  ;
-    wire [31:0] es_alu_src2  ;
-    wire [31:0] es_alu_result;
-    wire        es_Carry     ;
-    wire        es_Sign      ;
-    wire        es_Overflow  ;
-    wire        es_Zero      ;  
+    wire [31:0] csr_wdata;
+    wire [63:0] csr_bus;
+   
 
-    wire        es_inst_divw ;
-    wire        es_inst_modw ;
-    wire        es_inst_divwu;
-    wire        es_inst_modwu; 
-    wire [ 1:0] div_op;  
-    wire        div_stall;
+    assign {csr_op           ,//205:199
+            csr_wdata_sel    ,//198:198
+            csr_addr         ,//197:184
+            csr_we           ,//183:183
+            alu_op           ,//182:171
+            mul_div_op       ,//170:167
+            mul_div_sign     ,//166:166
+            branch_op        ,//165:157
+            store_op         ,//156:154
+            load_op          ,//153:148
+            reg_we           ,//147:147
+            src1_is_pc       ,//146:146
+            src2_is_imm      ,//145:145
+            src2_is_4        ,//144:144
+            rj               ,//143:139
+            rkd              ,//138:134
+            rj_value         ,//133:102
+            rkd_value        ,//101:70
+            dest             ,//69 :65
+            imm              ,//95 :64
+            es_pc            ,//63 :32
+            inst              //31 :0
+           } = ds_to_es_bus_r;
 
-    assign es_to_ms_bus = {div_op           ,   //77:76
-                           es_load_op       ,   //75:71
-                           es_mem_to_reg    ,   //70:70
-                           es_reg_we        ,   //69:69
-                           es_dest          ,   //68:64
-                           es_alu_result    ,   //63:32
-                           es_pc                //31:0 
+    assign {ms_reg_we,
+            ms_dest,
+            ms_result
+           } = ms_to_es_bus;
+
+    assign {ws_reg_we,
+            ws_dest,
+            ws_result
+           } = ws_to_es_bus;
+
+    assign es_to_ms_bus = {csr_bus  ,//174:111
+                           load_op  ,//110:105
+                           store_op ,//102:102
+                           reg_we   ,//101:101
+                           dest     ,//100:96
+                           es_result,//95 :64
+                           es_pc    ,//63 :32
+                           inst      //31 :0
                           };
-
-    assign es_to_fw_bus = {es_rf_rdata2 , 
-                           es_dest      ,
-                           es_reg_we    , 
-                           es_mem_we     
-                           };
-
-    assign es_ready_go    = !(div_stall);
-    assign es_allowin     = !es_valid || es_ready_go && ms_allowin;
-    assign es_to_ms_valid =  es_valid && es_ready_go;
-    always @(posedge clk) begin
-        if (reset) begin
-            es_valid <= 1'b0;
-        end
-        else if (es_allowin) begin
-            es_valid <= ds_to_es_valid;
-        end
-
+    
+    always @ (posedge clk) begin
         if (reset) begin
             ds_to_es_bus_r <= 0;
         end
-        if (ds_to_es_valid && es_allowin) begin
+        else if (flush) begin
+            ds_to_es_bus_r <= 0;
+        end
+        //nop, id stall and ex not stall
+        else if (stall[2]&(!stall[3])) begin
+            ds_to_es_bus_r <= 0;
+        end
+        //nop, id not stall and br_bus[32]
+        else if (!stall[2]&br_bus[32]) begin
+            ds_to_es_bus_r <= 0;
+        end
+        // id not stall so can go on
+        else if (!stall[2]) begin
             ds_to_es_bus_r <= ds_to_es_bus;
         end
     end
 
-    assign es_alu_src1 = es_src1_is_pc      ? es_pc         :
-                         es_src1_is_es_dest ? ms_alu_result :
-                         es_src1_is_ms_dest ? ws_rf_wdata   :
-                                              es_rf_rdata1;
-    assign es_alu_src2 = es_src2_is_imm     ? es_imm        : 
-                         es_src2_is_4       ? 32'd4         :
-                         es_src2_is_es_dest ? ms_alu_result :
-                         es_src2_is_ms_dest ? ws_rf_wdata   :
-                                              es_rf_rdata2;
-
-    assign es_inst_divw  = es_alu_op[15];
-    assign es_inst_modw  = es_alu_op[16];
-    assign es_inst_divwu = es_alu_op[17];
-    assign es_inst_modwu = es_alu_op[18];
+    assign src1 = ms_reg_we & (ms_dest == rj ) & (rj  != 1'b0) ? ms_result :
+                  ws_reg_we & (ws_dest == rj ) & (rj  != 1'b0) ? ws_result :
+                                                                 rj_value;
+    assign src2 = ms_reg_we & (ms_dest == rkd) & (rkd != 1'b0) ? ms_result :
+                  ws_reg_we & (ws_dest == rkd) & (rkd != 1'b0) ? ws_result :
+                                                                 rkd_value;
     
-    assign div_op[0] = es_inst_divw  | es_inst_divwu;
-    assign div_op[1] = es_inst_modw  | es_inst_modwu;
-
-    assign es_div_enable = (div_op[0] | div_op[1]) & es_valid;
-
-    assign es_div_sign   = es_inst_divw | es_inst_modw;
-
-    assign div_stall     = es_div_enable & ~div_complete;
+    assign alu_src1 = src1_is_pc ? es_pc :
+                                   src1;
+    assign alu_src2 = src2_is_4   ? 3'd4 :
+                      src2_is_imm ? imm  :
+                                    src2;
 
     alu u_alu(
-        .alu_op     (es_alu_op[14:0]),
-        .alu_src1   (es_alu_src1  ),
-        .alu_src2   (es_alu_src2  ),
-        .alu_result (es_alu_result)
-        );
+        .alu_op    (alu_op    ),
+        .alu_src1  (alu_src1  ),
+        .alu_src2  (alu_src2  ),
+        .alu_result(alu_result)
+    );
 
-    assign data_sram_en    = 1'b1;
-    assign data_sram_wen   = (es_mem_we && es_valid) ? (({4{es_store_op[0]}} & ({4{es_alu_result[1:0] == 2'b00}} & 4'b0001)
-                                                                             | ({4{es_alu_result[1:0] == 2'b01}} & 4'b0010)
-                                                                             | ({4{es_alu_result[1:0] == 2'b10}} & 4'b0100)
-                                                                             | ({4{es_alu_result[1:0] == 2'b11}} & 4'b1000))
-                                                      | ({4{es_store_op[1]}} & ({4{es_alu_result[1:0] == 2'b01}} & 4'b0011)
-                                                                             | ({4{es_alu_result[1:0] == 2'b10}} & 4'b1100))
-                                                      | ({4{es_store_op[2]}}                                     & 4'b1111 ))
-                                                                                                                 : 4'b0000;
-                                
-    assign data_sram_addr  = es_alu_result;
-    assign data_sram_wdata = es_data_is_rf_wdata ?    ws_rf_wdata          : 
-                             es_store_op[0]      ? {4{es_rf_rdata2[ 7:0]}} :
-                             es_store_op[1]      ? {2{es_rf_rdata2[15:0]}} :
-                             es_store_op[2]      ?    es_rf_rdata2         :
-                                                      32'b0;
+    bru u_bru(
+        .pc       (es_pc    ),
+        .rj_value (src1     ),
+        .rkd_value(src2     ),
+        .imm      (imm      ),
+        .branch_op(branch_op),
+        .br_taken (br_taken ),
+        .br_target(br_target)
+    );
+    
+    wire csr_cancel;
+    wire csr_cancel_reg;
+    
+    assign csr_cancel = 1'b1;
+    assign csr_cancel_reg = 1'b1;  //TODO!
+    
+    assign br_bus = {br_taken & ~(csr_cancel|csr_cancel_reg),
+                     br_target
+                    };
+
+    lsu u_lsu(
+        .load_op        (load_op          ),
+        .store_op       (store_op         ),
+        .rj_value       (rj_value         ),
+        .rkd_value      (rkd_value        ),
+        .imm            (imm              ),
+
+        .data_sram_en   (data_sram_en_temp),
+        .data_sram_we   (data_sram_we     ),
+        .data_sram_addr (data_sram_addr   ),
+        .data_sram_wdata(data_sram_wdata  )
+    );
+    assign data_sram_en = (csr_cancel|csr_cancel_reg) ? 1'b0 : data_sram_en_temp;
+
+    // mul_div
+    mul_div_top u_mul_div_top(
+        .clk           (clk                 ),
+        .reset         (reset               ),
+        .stall         (stall               ),
+        .stallreq      (stallreq_for_mul_div),
+        .mul_div_op    (mul_div_op          ),
+        .mul_div_sign  (mul_div_sign        ),
+        .a             (rj_value            ),
+        .b             (rkd_value           ),
+        .mul_div_result(mul_div_result      )
+    );
+
+    assign es_result = |mul_div_op ? mul_div_result :
+                                     alu_result;
+    
+    assign csr_wdata = csr_wdata_sel ? imm : src1;
+    assign csr_bus = {csr_we,
+                      csr_wdata_sel,
+                      csr_op,
+                      csr_addr,
+                      csr_wdata
+                     };
+
+    assign stallreq_es = stallreq_for_mul_div;
 
 endmodule

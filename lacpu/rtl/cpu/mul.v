@@ -1,4 +1,4 @@
-module div(
+module mul(
     input         clk,
     input         reset,
     output        stallreq,
@@ -8,45 +8,40 @@ module div(
     input  [31:0] a,
     input  [31:0] b,
     
-    output reg [31:0] quotient, //商
-    output reg [31:0] remainder //余数
+    output reg [31:0] result_h,
+    output reg [31:0] result_l
 );
-
     reg  [ 5:0] cnt;
-    wire [31:0] sub_result;
+    wire [31:0] add_result;
     wire        carry;
-    wire [31:0] temp;
-
     always @ (posedge clk) begin
         if (reset) begin
             cnt <= 0;
         end
         else if (cnt != 0) begin
-            cnt <= cnt -1;
+            cnt <= cnt - 1;
         end
         else if (in_valid) begin
             cnt <= 32;
         end
     end
 
-    assign temp = {remainder[30:0],quotient[31]};
-    assign carry = temp < b ? 0 : 1;
-    assign sub_result = carry ? temp - b : temp;
+    assign {carry, add_result} = result_h + (result_l[0] ? a : 0);
 
     always @ (posedge clk) begin
         if (reset) begin
-            quotient <= 0;
-            remainder <= 0;
-        end
+            result_h <= 0;
+            result_l <= 0;
+        end 
         else if (cnt != 0) begin
-            {remainder, quotient} <= {sub_result, quotient[30:0], carry};
+            {result_h, result_l} <= {carry, add_result, result_l[31:1]};
         end
         else if (in_valid) begin
-            quotient <= a;
-            remainder <= 0;
+            result_h <= 0;
+            result_l <= b;
         end
-    end
-    
+    end 
+
     assign out_valid = (cnt==0);
     assign stallreq = in_valid | (~(cnt==0));
 endmodule

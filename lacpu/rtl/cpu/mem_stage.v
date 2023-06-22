@@ -1,95 +1,179 @@
-`include "mycpu.vh"
+module mem_stage
+#(
+    parameter ES_TO_MS_BUS_WD = 175,
+    parameter MS_TO_ES_BUS_WD = 38,
+    parameter MS_TO_WS_BUS_WD = 102
+)
+(
+    input         clk,
+    input         reset,
+    input         flush,
+    input  [ 5:0] stall,
 
-module mem_stage(
-    input                          clk            ,
-    input                          reset          ,
-    //allowin
-    input                          ws_allowin     ,
-    output                         ms_allowin     ,
-    //from es
-    input                          es_to_ms_valid ,
-    input  [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus   ,
-    //to ws
-    output                         ms_to_ws_valid ,
-    output [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus   ,
-    //from data-sram
-    input  [31                 :0] data_sram_rdata,
-    //to fw
-    output [`MS_TO_FW_BUS_WD -1:0] ms_to_fw_bus   ,
-    //to es
-    output [`MS_TO_ES_BUS_WD -1:0] ms_to_es_bus   ,
-    //div mul
-    input  [31:0]     div_result    ,
-    input  [31:0]     mod_result
+    output        except_en,
+    output [31:0] new_pc,
+
+    input  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,
+    output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
+    output [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus,
+
+    input  [31:0] data_sram_rdata
 );
 
-    reg         ms_valid;
-    wire        ms_ready_go;
+    reg  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus_r;
+    reg  [31:0] data_sram_rdata_r;
+    reg  [31:0] csr_rdata_r;
+    reg         stall_flag;
 
-    reg [`ES_TO_MS_BUS_WD -1:0] es_to_ms_bus_r;
-    wire [ 4:0] ms_load_op;
-    wire [ 2:0] ms_store_op;
-    wire        ms_mem_to_reg;
-    wire        ms_reg_we;
-    wire [ 4:0] ms_dest;
-    wire [31:0] ms_alu_result;
+    wire [63:0] csr_bus;
+    wire [ 5:0] load_op;
+    wire [ 2:0] store_op;
+    wire        reg_we;
+    wire [ 4:0] dest;
+    wire [31:0] es_result;
     wire [31:0] ms_pc;
-    wire [ 1:0] ms_div_op;
+    wire [31:0] inst;
 
-    assign {ms_div_op        ,   //77:76
-            ms_load_op       ,   //75:71
-            ms_mem_to_reg    ,   //70:70
-            ms_reg_we        ,   //69:69
-            ms_dest          ,   //68:64
-            ms_alu_result    ,   //63:32
-            ms_pc                //31:0 
-        } = es_to_ms_bus_r;
-    
-    wire [31:0] mem_result;
+    wire [31:0] data_temp;
+    wire [31:0] csr_result;
+    wire [31:0] csr_rdata;
+
+    wire inst_ll_w;
+    wire inst_ld_b;
+    wire inst_ld_bu;
+    wire inst_ld_h;
+    wire inst_ld_hu;
+    wire inst_ld_w;
+
+    wire [ 3:0] byte_sel;
+    wire [31:0] ms_result;
+
+    wire        csr_we;
+    wire        csr_wdata_sel;
+    wire [ 6:0] csr_op;
+    wire [13:0] csr_addr;
+    wire [31:0] csr_wdata;
+
     wire [31:0] ms_final_result;
 
+    assign {csr_bus  ,//174:111
+            load_op  ,//110:105
+            store_op ,//102:102
+            reg_we   ,//101:101
+            dest     ,//100:96
+            es_result,//95 :64
+            ms_pc    ,//63 :32
+            inst      //31 :0
+           } = es_to_ms_bus_r;
 
-    assign ms_to_ws_bus = {ms_reg_we      ,  //69:69
-                           ms_dest        ,  //68:64
-                           ms_final_result,  //63:32
-                           ms_pc             //31:0
+    assign ms_to_es_bus = {reg_we,
+                           dest,
+                           es_result
                           };
 
-    assign ms_to_fw_bus = {ms_dest, ms_reg_we};
+    assign ms_to_ws_bus = {reg_we           ,//101:101
+                           dest             ,//100:96
+                           ms_final_result  ,//95 :64
+                           ms_pc            ,//63 :32
+                           inst              //31 :0
+                          };
 
-    assign ms_to_es_bus = {ms_alu_result};
-
-    assign ms_ready_go    = 1'b1;
-    assign ms_allowin     = !ms_valid || ms_ready_go && ws_allowin;
-    assign ms_to_ws_valid = ms_valid && ms_ready_go;
-    always @(posedge clk) begin
-        if (reset) begin
-            ms_valid <= 1'b0;
-        end
-        else if (ms_allowin) begin
-            ms_valid <= es_to_ms_valid;
-        end
-
+    always @ (posedge clk) begin
         if (reset) begin
             es_to_ms_bus_r <= 0;
         end
-        if (es_to_ms_valid && ms_allowin) begin
-            es_to_ms_bus_r  <= es_to_ms_bus;
+        else if (flush) begin
+            es_to_ms_bus_r <= 0;
+        end
+        else if (stall[3]&(!stall[4])) begin
+            es_to_ms_bus_r <= 0;
+        end
+        else if (!stall[3]) begin
+            es_to_ms_bus_r <= es_to_ms_bus;
+        end
+    end
+    
+    always @ (posedge clk) begin
+        if (reset) begin
+            data_sram_rdata_r <= 0;
+            csr_rdata_r <= 0;
+            stall_flag <= 1'b0;
+        end
+        else if (flush) begin
+            data_sram_rdata_r <= 0;
+            csr_rdata_r <= 0;
+            stall_flag <= 1'b0;
+        end
+        else if (!stall[3]) begin
+            data_sram_rdata_r <= data_sram_rdata;
+            csr_rdata_r <= csr_rdata;
+            stall_flag <= 1'b0;
+        end
+        else if (stall_flag) begin
+            
+        end
+        else if (stall[3]&stall[4])begin
+            data_sram_rdata_r <= data_sram_rdata;
+            csr_rdata_r <= csr_rdata;
+            stall_flag <= 1'b1;
         end
     end
 
-    assign mem_result = (ms_load_op[0] || ms_load_op[3]) ? ((ms_alu_result[1:0] == 2'b00) ? {{24{ms_load_op[3] ? data_sram_rdata[ 7] : 1'b0 }}, data_sram_rdata[ 7:0]       } :
-                                                            (ms_alu_result[1:0] == 2'b01) ? {{16{ms_load_op[3] ? data_sram_rdata[ 7] : 1'b0 }}, data_sram_rdata[ 7:0],  8'b0} :
-                                                            (ms_alu_result[1:0] == 2'b10) ? {{ 8{ms_load_op[3] ? data_sram_rdata[ 7] : 1'b0 }}, data_sram_rdata[ 7:0], 16'b0} :
-                                                                                            {                                                   data_sram_rdata[ 7:0], 24'b0}) :
-                        (ms_load_op[1] || ms_load_op[4]) ? ((ms_alu_result[1:0] == 2'b00) ? {{16{ms_load_op[4] ? data_sram_rdata[15] : 1'b0 }}, data_sram_rdata[15:0]       } :
-                                                                                            {                                                   data_sram_rdata[15:0], 16'b0}) :
-                         ms_load_op[2]                   ? (                                                                                    data_sram_rdata              ) :
-                                                             32'b0;
+    assign data_temp  = stall_flag ? data_sram_rdata_r : data_sram_rdata;
+    assign csr_result = stall_flag ? csr_rdata_r : csr_rdata;
 
-    assign ms_final_result = ms_mem_to_reg ? mem_result :
-                             ms_div_op[0]  ? div_result :
-                             ms_div_op[1]  ? mod_result :
-                                             ms_alu_result;
+    assign {inst_ld_b,
+            inst_ld_h,
+            inst_ld_w, 
+            inst_ld_bu, 
+            inst_ld_hu, 
+            inst_ll_w
+           } = load_op;
+
+    decoder_2_4 u_decoder_2_4(
+        .in (es_result[1:0]),
+        .out(byte_sel      )
+    );
+
+    assign ms_result = (inst_ld_b  & byte_sel[0]) ? {{24{data_temp[ 7]}}, data_temp[ 7: 0]       } :
+                       (inst_ld_b  & byte_sel[1]) ? {{16{data_temp[15]}}, data_temp[15: 8],  8'b0} :
+                       (inst_ld_b  & byte_sel[2]) ? {{ 8{data_temp[23]}}, data_temp[23:16], 16'b0} :
+                       (inst_ld_b  & byte_sel[3]) ? {                     data_temp[31:24], 24'b0} :
+                       (inst_ld_bu & byte_sel[0]) ? { 24'b0, data_temp[ 7: 0]       }              :
+                       (inst_ld_bu & byte_sel[1]) ? { 16'b0, data_temp[15: 8],  8'b0}              :
+                       (inst_ld_bu & byte_sel[2]) ? {  8'b0, data_temp[23:16], 16'b0}              :
+                       (inst_ld_bu & byte_sel[3]) ? {        data_temp[31:24], 24'b0}              :
+                       (inst_ld_h  & byte_sel[0]) ? {{16{data_temp[15]}}, data_temp[15: 0]       } :
+                       (inst_ld_h  & byte_sel[2]) ? {                     data_temp[15: 0], 16'b0} :
+                       (inst_ld_hu & byte_sel[0]) ? { 16'b0, data_temp[15: 0]       }              :
+                       (inst_ld_hu & byte_sel[2]) ? {        data_temp[15: 0], 16'b0}              :
+                       (inst_ld_w  & byte_sel[0]) ?   data_temp                                    :
+                                                      32'b0; // inst_ll ? 
+
+    assign {csr_we,
+            csr_wdata_sel,
+            csr_op,
+            csr_addr,
+            csr_wdata
+           } = csr_bus;
+
+    csr u_csr(
+        .clk            (clk              ),
+        .reset          (reset            ),
+        .stall          (stall[3]&stall[4]),
+        .pc             (ms_pc            ),
+        .csr_we         (csr_we           ),
+        .csr_op         (csr_op           ),
+        .csr_addr       (csr_addr         ),
+        .csr_wdata_sel  (csr_wdata_sel    ),
+        .csr_wdata      (csr_wdata        ),
+        .csr_rdata      (csr_rdata        ),
+        .except_en      (except_en        ),
+        .new_pc         (new_pc           )
+    );
+    
+    assign ms_final_result = (|load_op) ? ms_result  :
+                             (|csr_op)  ? csr_result :
+                                          es_result;
 
 endmodule

@@ -1,5 +1,5 @@
 module alu(
-  input  [14:0] alu_op    ,
+  input  [11:0] alu_op    ,
   input  [31:0] alu_src1  ,
   input  [31:0] alu_src2  ,
   output [31:0] alu_result
@@ -17,9 +17,6 @@ module alu(
   wire op_sll;
   wire op_srl;
   wire op_sra;
-  wire op_mul;
-  wire op_mulh;
-  wire op_mulhu;
 
 
   assign op_add   = alu_op[ 0];
@@ -34,9 +31,7 @@ module alu(
   assign op_srl   = alu_op[ 9];
   assign op_sra   = alu_op[10];
   assign op_lui   = alu_op[11];
-  assign op_mul   = alu_op[12];
-  assign op_mulh  = alu_op[13];
-  assign op_mulhu = alu_op[14];
+  
 
   wire [31:0] add_sub_result; 
   wire [31:0] slt_result; 
@@ -92,25 +87,16 @@ module alu(
 
   assign sr_result   = sr64_result[31:0];
 
-  // MUL MULH result
-  assign mul64_result  = $signed(alu_src1) * $signed(alu_src2);
-  assign mulu64_result = alu_src1 * alu_src2;
-
-  assign mul_result    = op_mul  ?  mul64_result[31: 0] : 
-                         op_mulh ?  mul64_result[63:32] :
-                      /*op_mulhu*/ mulu64_result[63:32];
-
   // final result mux
-  assign alu_result = ({32{op_add|op_sub          }} & add_sub_result)
-                    | ({32{op_slt                 }} & slt_result)
-                    | ({32{op_sltu                }} & sltu_result)
-                    | ({32{op_and                 }} & and_result)
-                    | ({32{op_nor                 }} & nor_result)
-                    | ({32{op_or                  }} & or_result)
-                    | ({32{op_xor                 }} & xor_result)
-                    | ({32{op_lui                 }} & lui_result)
-                    | ({32{op_sll                 }} & sll_result)
-                    | ({32{op_srl|op_sra          }} & sr_result)
-                    | ({32{op_mul|op_mulh|op_mulhu}} & mul_result);
+  assign alu_result = ({32{op_add|op_sub}} & add_sub_result)
+                    | ({32{op_slt       }} & slt_result)
+                    | ({32{op_sltu      }} & sltu_result)
+                    | ({32{op_and       }} & and_result)
+                    | ({32{op_nor       }} & nor_result)
+                    | ({32{op_or        }} & or_result)
+                    | ({32{op_xor       }} & xor_result)
+                    | ({32{op_lui       }} & lui_result)
+                    | ({32{op_sll       }} & sll_result)
+                    | ({32{op_srl|op_sra}} & sr_result);
   
 endmodule

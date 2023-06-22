@@ -1,74 +1,68 @@
-`include "mycpu.vh"
+module wb_stage
+#(
+    parameter MS_TO_WS_BUS_WD = 102,
+    parameter WS_TO_RF_BUS_WD = 38,
+    parameter WS_TO_ES_BUS_WD = 38
+)
+(
+    input        clk,
+    input        reset,
+    input        flush,
+    input  [5:0] stall,
 
-module wb_stage(
-    input                           clk           ,
-    input                           reset         ,
-    //allowin
-    output                          ws_allowin    ,
-    //from ms
-    input                           ms_to_ws_valid,
-    input  [`MS_TO_WS_BUS_WD -1:0]  ms_to_ws_bus  ,
-    //to rf: for write back
-    output [`WS_TO_RF_BUS_WD -1:0]  ws_to_rf_bus  ,
-    //to es
-    output [`WS_TO_ES_BUS_WD -1:0]  ws_to_es_bus  ,
-    //trace debug interface
-    output [31:0] debug_wb_pc     ,
-    output [ 3:0] debug_wb_rf_wen ,
+    input  [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus,
+    output [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
+    output [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
+
+    output [31:0] debug_wb_pc,
+    output [ 3:0] debug_wb_rf_we,
     output [ 4:0] debug_wb_rf_wnum,
     output [31:0] debug_wb_rf_wdata
 );
+    reg  [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus_r;
 
-    reg         ws_valid;
-    wire        ws_ready_go;
-
-    reg [`MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus_r;
-    wire        ws_gr_we;
-    wire [ 4:0] ws_dest;
-    wire [31:0] ws_final_result;
+    wire        reg_we;
+    wire [ 4:0] dest;
+    wire [31:0] ms_final_result;
     wire [31:0] ws_pc;
-    assign {ws_reg_we      ,  //69:69
-            ws_dest        ,  //68:64
-            ws_final_result,  //63:32
-            ws_pc             //31:0
-        } = ms_to_ws_bus_r;
+    wire [31:0] inst;
 
-    wire        rf_we;
-    wire [4 :0] rf_waddr;
-    wire [31:0] rf_wdata;
-    assign ws_to_rf_bus = {rf_we   ,  //37:37
-                        rf_waddr,  //36:32
-                        rf_wdata   //31:0
-                        };
+    assign {reg_we           ,//101:101
+            dest             ,//100:96
+            ms_final_result  ,//95 :64
+            ws_pc            ,//63 :32
+            inst              //31 :0
+           } = ms_to_ws_bus_r;
 
-    assign ws_to_es_bus = {rf_wdata};
+    assign ws_to_rf_bus = {reg_we,
+                           dest,
+                           ms_final_result
+                          };
 
-    assign ws_ready_go = 1'b1;
-    assign ws_allowin  = !ws_valid || ws_ready_go;
-    always @(posedge clk) begin
-        if (reset) begin
-            ws_valid <= 1'b0;
-        end
-        else if (ws_allowin) begin
-            ws_valid <= ms_to_ws_valid;
-        end
-        
+    assign ws_to_es_bus = {reg_we,
+                           dest,
+                           ms_final_result
+                          };
+
+    always @ (posedge clk) begin
         if (reset) begin
             ms_to_ws_bus_r <= 0;
         end
-        if (ms_to_ws_valid && ws_allowin) begin
+        else if (flush) begin
+            ms_to_ws_bus_r <= 0;
+        end
+        else if (stall[4]&(!stall[5])) begin
+            ms_to_ws_bus_r <= 0;
+        end
+        else if (!stall[4]) begin
             ms_to_ws_bus_r <= ms_to_ws_bus;
         end
     end
 
-    assign rf_we    = ws_reg_we && ws_valid;
-    assign rf_waddr = ws_dest;
-    assign rf_wdata = ws_final_result;
 
-    // debug info generate
     assign debug_wb_pc       = ws_pc;
-    assign debug_wb_rf_wen   = {4{rf_we}};
-    assign debug_wb_rf_wnum  = ws_dest;
-    assign debug_wb_rf_wdata = ws_final_result;
+    assign debug_wb_rf_we    = {4{reg_we}};
+    assign debug_wb_rf_wnum  = ms_final_result;
+    assign debug_wb_rf_wdata = ms_final_result;
 
 endmodule

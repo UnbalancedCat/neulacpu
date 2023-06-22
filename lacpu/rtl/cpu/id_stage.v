@@ -1,271 +1,211 @@
-`include "mycpu.vh"
+module id_stage
+#(
+    parameter FS_TO_DS_BUS_WD = 32,
+    parameter DS_TO_ES_BUS_WD = 206,
+    parameter WS_TO_RF_BUS_WD = 38
+)
+(
+    input         clk,
+    input         reset,
 
-// 译码阶段
-module id_stage(
-    input                          clk           ,
-    input                          reset         ,
-    //allowin
-    input                          es_allowin    ,
-    output                         ds_allowin    ,
-    //from fs
-    input                          fs_to_ds_valid,
-    input  [`FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus  ,
-    //to es
-    output                         ds_to_es_valid,
-    output [`DS_TO_ES_BUS_WD -1:0] ds_to_es_bus  ,
-    //to rf
-    input  [`WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus  ,
-    //to fw
-    output [`DS_TO_FW_BUS_WD -1:0] ds_to_fw_bus  ,
-    //to fs
-    output [`BR_BUS_WD       -1:0] br_bus
+    input         flush,
+    input  [ 5:0] stall,
+    input         br_taken,
+
+    output        stallreq_id,
+
+    input         pc_valid,   
+    input  [31:0] inst_sram_rdata,
+    input  [31:0] csr_vec_h,
+
+    input  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus,
+    input  [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
+    output [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus
 );
+    reg         pc_valid_r;
+    reg  [31:0] fs_to_ds_bus_r;
+    reg  [31:0] csr_vec_h_r;
 
-    reg         ds_valid   ;
-    wire        ds_ready_go;
+    reg  [31:0] inst_r;
+    reg         stall_flag;
 
-    wire [31                 :0] fs_pc;
-    reg  [`FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus_r;
-    assign fs_pc = fs_to_ds_bus[31:0];
+    reg  [ 6:0] ex_load_buffer;
+    reg         ex_csr_buffer;
 
-    wire [31:0] ds_inst;
-    wire [31:0] ds_pc  ;
-    assign {ds_inst,
-            ds_pc  } = fs_to_ds_bus_r;
+    wire        br_flush;
+    wire [31:0] ds_pc;
 
-    wire        rf_we   ;
-    wire [ 4:0] rf_waddr;
+    wire        src1_is_pc;
+    wire        src2_is_imm;
+    wire        src2_is_4;
+    wire        src_reg_is_rd;
+    wire [ 4:0] rj;
+    wire [ 4:0] rk;
+    wire [ 4:0] rd;
+    wire [ 4:0] rkd;
+    wire [31:0] imm;
+    wire [ 4:0] dest;
+    wire [11:0] alu_op;
+    wire [ 3:0] mul_div_op;
+    wire        mul_div_sign;
+    wire [ 8:0] branch_op;
+    wire [ 5:0] load_op;
+    wire [ 2:0] store_op;
+    wire        reg_we;
+
+    wire        csr_we;
+    wire [ 6:0] csr_op; 
+    wire [13:0] csr_addr;
+    wire        csr_wdata_sel;
+
+
+    wire [31:0] inst;
+    wire [31:0] next_inst;
+
+    wire        rf_raddr1;
+    wire [31:0] rf_rdata1;
+    wire        rf_raddr2;
+    wire [31:0] rf_rdata2;
+    wire        rf_we;
+    wire        rf_waddr;
     wire [31:0] rf_wdata;
+
+    wire [31:0] rj_value;
+    wire [31:0] rkd_value;
+
+    wire [ 4:0] ex_rf_waddr;
+    wire        ex_is_load;
+    wire        ex_is_csr;
+    wire        ex_rf_we;
+    wire        stallreq_load;
+    wire        stallreq_csr;
+
+    assign ds_pc    = fs_to_ds_bus_r;
+    assign br_flush = br_taken;
     assign {rf_we   ,  //37:37
             rf_waddr,  //36:32
             rf_wdata   //31:0
         } = ws_to_rf_bus;
 
-    wire [18:0] alu_op;
-    wire        src1_is_pc;
-    wire        src2_is_imm;
-    wire        src2_is_4;
-    wire        mem_to_reg;
-    wire        reg_we;
-    wire        mem_we;
-    wire [ 4:0] load_op;
-    wire [ 2:0] store_op;
-    wire [ 4:0] dest;
-    wire [31:0] imm;
+    wire csr_vec_l;
+    assign csr_vec_l = 0; //TODO!
 
-    wire [21:0] op;
-    wire [ 4:0] ra;
-    wire [ 4:0] rk;
-    wire [ 4:0] rj;
-    wire [ 4:0] rd;
-    wire [ 7:0] op6_d;
-    wire [ 7:0] op7_d;
-    wire [ 7:0] op10_d;
-    wire [31:0] op17_d;
-
-    wire        inst_addw;
-    wire        inst_subw;
-    wire        inst_addiw;
-    wire        inst_lu12iw;
-    wire        inst_slt;
-    wire        inst_sltu;
-    wire        inst_slti;
-    wire        inst_sltui;
-    wire        inst_pcaddu12i;
-    wire        inst_and;
-    wire        inst_or;
-    wire        inst_nor;
-    wire        inst_xor;
-    wire        inst_andi;
-    wire        inst_ori;
-    wire        inst_xori;
-    wire        inst_sllw;
-    wire        inst_srlw;
-    wire        inst_sraw;
-    wire        inst_slliw;
-    wire        inst_srliw;
-    wire        inst_sraiw;
-    wire        inst_mulw;
-    wire        inst_mulhw;
-    wire        inst_mulhwu;
-    wire        inst_beq;
-    wire        inst_bne;
-    wire        inst_blt;
-    wire        inst_bge;
-    wire        inst_bltu;
-    wire        inst_bgeu;
-    wire        inst_b;
-    wire        inst_bl;
-    wire        inst_jirl;
-    wire        inst_ldb;
-    wire        inst_ldh;
-    wire        inst_ldw;
-    wire        inst_ldbu;
-    wire        inst_ldhu;
-    wire        inst_stb;
-    wire        inst_sth;
-    wire        inst_stw;
-    wire        inst_divw;
-    wire        inst_modw;
-    wire        inst_divwu;
-    wire        inst_modwu;
-
-    wire        dst_is_r1;   
-
-    wire [ 4:0] rf_raddr1;
-    wire [31:0] rf_rdata1;
-    wire [ 4:0] rf_raddr2;
-    wire [31:0] rf_rdata2;
-
-    wire        rj_eq_rd;
-    wire        rj_lt_rd_unsign;
-    wire        rj_lt_rd_sign;
-    wire        br_taken;
-    wire [31:0] br_target;
-
-    assign ds_to_es_bus = {alu_op       ,   //159:141
-                           src1_is_pc   ,   //140:140
-                           src2_is_imm  ,   //139:139
-                           src2_is_4    ,   //138:138
-                           mem_to_reg   ,   //137:137
-                           reg_we       ,   //136:136
-                           mem_we       ,   //135:135
-                           load_op      ,   //134:134
-                           store_op     ,   //133:133
-                           dest         ,   //132:128
-                           imm          ,   //127:96
-                           rf_rdata1    ,   //95 :64
-                           rf_rdata2    ,   //63 :32
-                           ds_pc            //31 :0
+    assign csr_vec = {csr_vec_h_r, csr_vec_l};
+    assign ds_to_es_bus = {csr_op                               ,//205:199
+                           csr_wdata_sel                        ,//198:198
+                           csr_addr                             ,//197:184
+                           csr_we                               ,//183:183
+                           alu_op                               ,//182:171
+                           mul_div_op       & {4{pc_valid_r}}   ,//170:167
+                           mul_div_sign     & pc_valid_r        ,//166:166
+                           branch_op        & {9{pc_valid_r}}   ,//165:157
+                           store_op         & {3{pc_valid_r}}   ,//156:154
+                           load_op          & {6{pc_valid_r}}   ,//153:148
+                           reg_we           & pc_valid_r        ,//147:147
+                           src1_is_pc                           ,//146:146
+                           src2_is_imm                          ,//145:145
+                           src2_is_4                            ,//144:144
+                           rj                                   ,//143:139
+                           rkd                                  ,//138:134
+                           rj_value                             ,//133:102
+                           rkd_value                            ,//101:70
+                           dest                                 ,//69 :65
+                           imm                                  ,//95 :64
+                           ds_pc                                ,//63 :32
+                           inst             & {32{pc_valid_r}}   //31 :0
                           };
 
-    assign ds_to_fw_bus = {rf_raddr1 ,
-                           rf_raddr2
-                          };
-
-    assign ds_ready_go    = 1'b1;
-    assign ds_allowin     = (!ds_valid || ds_ready_go && es_allowin);
-    assign ds_to_es_valid = ds_valid && ds_ready_go;
-    always @(posedge clk) begin
-
+    always @ (posedge clk)begin
         if (reset) begin
-            ds_valid <= 1'b0;
+            pc_valid_r <= 1'b0;
+            fs_to_ds_bus_r <= 32'b0;
+            csr_vec_h_r <= 32'b0;
         end
-        else if (ds_allowin) begin
-            ds_valid <= fs_to_ds_valid;
+        else if (flush) begin
+            pc_valid_r <= 1'b0;
+            fs_to_ds_bus_r <= 32'b0;
+            csr_vec_h_r <= 32'b0;
         end
-
-        if (reset) begin
-            fs_to_ds_bus_r <= 0;
+        //nop, ID stall and EX not stall
+        else if (stall[1] & (!stall[2]))begin
+            pc_valid_r <= 1'b0;
+            fs_to_ds_bus_r <= 32'b0;
+            csr_vec_h_r <= 32'b0;
         end
-        else if (fs_to_ds_valid && ds_allowin) begin
+        //nop, ID not stall but branch
+        else if (!stall[1] & br_flush) begin
+            pc_valid_r <= 1'b0;
+            fs_to_ds_bus_r <= 32'b0;
+            csr_vec_h_r <= 32'b0;
+        end
+        // ID not stall so go on
+        else if (!stall[1]) begin
+            pc_valid_r <= pc_valid;
             fs_to_ds_bus_r <= fs_to_ds_bus;
+            csr_vec_h_r <= csr_vec_h;
         end
     end
 
-    assign op   = ds_inst[31:10];
-    assign ra   = ds_inst[19:15];
-    assign rk   = ds_inst[14:10];
-    assign rj   = ds_inst[ 9: 5];
-    assign rd   = ds_inst[ 4: 0];
+    always @ (posedge clk) begin
+        if (reset) begin
+            inst_r <= 64'b0;
+            stall_flag <= 1'b0;
+        end
+        else if (flush) begin
+            inst_r <= 64'b0;
+            stall_flag <= 1'b0;
+        end
+        //if not stall, get inst from inst_sram
+        else if (!stall[1]) begin
+            inst_r <= inst_sram_rdata;
+            stall_flag <= 1'b0;
+        end
+        else if (stall_flag) begin
 
-    decoder_3_8  u_dec0(.in(op[18:16]), .out(op6_d ));
-    decoder_3_8  u_dec1(.in(op[17:15]), .out(op7_d ));
-    decoder_3_8  u_dec2(.in(op[14:12]), .out(op10_d));
-    decoder_5_32 u_dec3(.in(ra       ), .out(op17_d));
+        end
+        //if stall and id stall, get inst from inst_ram ?
+        else if (stall[1]&stall[2]) begin
+            inst_r <= inst_sram_rdata;
+            stall_flag <= 1'b1;
+        end
+    end
 
-    assign inst_addw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00000];
-    assign inst_subw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00001];
-    assign inst_slt         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00100];
-    assign inst_sltu        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b00101];
-    assign inst_nor         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01000];
-    assign inst_and         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01001];
-    assign inst_or          = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01010];
-    assign inst_xor         = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01011];
-    assign inst_sllw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01110];
-    assign inst_srlw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b01111];
-    assign inst_sraw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b10000];
-    assign inst_slliw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b00001];
-    assign inst_srliw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b01001];
-    assign inst_sraiw       = (op[21:10] == 12'b0000_0000_0100) & op17_d[5'b10001];
-    assign inst_mulw        = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11000];
-    assign inst_mulhw       = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11001];
-    assign inst_mulhwu      = (op[21:10] == 12'b0000_0000_0001) & op17_d[5'b11010];
-    assign inst_divw        = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00000];
-    assign inst_modw        = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00001];
-    assign inst_divwu       = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00010];
-    assign inst_modwu       = (op[21:10] == 12'b0000_0000_0010) & op17_d[5'b00011];
-    assign inst_slti        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b000];
-    assign inst_sltui       = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b001];
-    assign inst_addiw       = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b010];
-    assign inst_andi        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b101];
-    assign inst_ori         = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b110];
-    assign inst_xori        = (op[21:15] ==  7'b0000_001      ) & op10_d[3'b111];
-    assign inst_ldb         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b000];
-    assign inst_ldh         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b001];
-    assign inst_ldw         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b010];
-    assign inst_stb         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b100];
-    assign inst_sth         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b101];
-    assign inst_stw         = (op[21:15] ==  7'b0010_100      ) & op10_d[3'b110];
-    assign inst_ldbu        = (op[21:15] ==  7'b0010_101      ) & op10_d[3'b000];
-    assign inst_ldhu        = (op[21:15] ==  7'b0010_101      ) & op10_d[3'b001];
-    assign inst_lu12iw      = (op[21:18] ==  4'b0001          ) &  op7_d[3'b010];
-    assign inst_pcaddu12i   = (op[21:18] ==  4'b0001          ) &  op7_d[3'b110];
-    assign inst_jirl        = (op[21:19] ==  3'b010           ) &  op6_d[3'b011];
-    assign inst_b           = (op[21:19] ==  3'b010           ) &  op6_d[3'b100];
-    assign inst_bl          = (op[21:19] ==  3'b010           ) &  op6_d[3'b101];
-    assign inst_beq         = (op[21:19] ==  3'b010           ) &  op6_d[3'b110];
-    assign inst_bne         = (op[21:19] ==  3'b010           ) &  op6_d[3'b111];
-    assign inst_blt         = (op[21:19] ==  3'b011           ) &  op6_d[3'b000];
-    assign inst_bge         = (op[21:19] ==  3'b011           ) &  op6_d[3'b001];
-    assign inst_bltu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b010];
-    assign inst_bgeu        = (op[21:19] ==  3'b011           ) &  op6_d[3'b011];
+    assign next_inst = stall_flag ? inst_r : inst_sram_rdata;
+    assign inst = ~pc_valid_r ? 32'b0 : next_inst;
 
-    assign alu_op[ 0] = inst_addw   | inst_addiw | inst_pcaddu12i | inst_ldb | inst_ldh | inst_ldbu | inst_ldhu | inst_ldw | inst_stb | inst_sth | inst_stw;
-    assign alu_op[ 1] = inst_subw;
-    assign alu_op[ 2] = inst_slt    | inst_slti;
-    assign alu_op[ 3] = inst_sltu   | inst_sltui;
-    assign alu_op[ 4] = inst_and    | inst_andi;
-    assign alu_op[ 5] = inst_nor;
-    assign alu_op[ 6] = inst_or     | inst_ori;
-    assign alu_op[ 7] = inst_xor    | inst_xori;
-    assign alu_op[ 8] = inst_sllw   | inst_slliw;
-    assign alu_op[ 9] = inst_srlw   | inst_srliw;
-    assign alu_op[10] = inst_sraw   | inst_sraiw;
-    assign alu_op[11] = inst_lu12iw;
-    assign alu_op[12] = inst_mulw;
-    assign alu_op[13] = inst_mulhw;
-    assign alu_op[14] = inst_mulhwu;
-    assign alu_op[15] = inst_divw;
-    assign alu_op[16] = inst_modw;
-    assign alu_op[17] = inst_divwu;
-    assign alu_op[18] = inst_modwu;
+    inst_decoder u_inst_decoder(
+        .inst           (inst           ),
 
-    assign imm  =     {32{inst_slti   | inst_sltui | inst_addiw | inst_ldb  | inst_ldh | inst_ldw  | inst_stb | inst_sth | inst_stw | inst_ldbu | inst_ldhu}} & {{20{ds_inst[21]}}, ds_inst[21:10]} 
-                    | {32{inst_beq    | inst_bne   | inst_bge   | inst_bgeu | inst_blt | inst_bltu | inst_jirl}} & {{14{ds_inst[25]}}, ds_inst[25:10], 2'b0}
-                    | {32{inst_andi   | inst_ori   | inst_xori }} & { 20'b0         , ds_inst[21:10]}
-                    | {32{inst_lu12iw | inst_pcaddu12i         }} & { ds_inst[24: 5], 12'b0}
-                    | {32{inst_slliw  | inst_srliw | inst_sraiw}} & { 27'b0         , rk}
-                    | {32{inst_b      | inst_bl}}                 & {{4{ds_inst[9]}}, ds_inst[9:0], ds_inst[25:10], 2'b0};
-
-    assign src1_is_pc   = inst_bl    | inst_jirl   | inst_pcaddu12i | inst_b;
-    assign src2_is_4    = inst_bl    | inst_jirl;
-    assign src2_is_imm  = inst_addiw | inst_lu12iw | inst_pcaddu12i | inst_andi | inst_ori | inst_xori | inst_slliw | inst_srliw | inst_sraiw | inst_ldb | inst_ldh | inst_ldw | inst_ldbu | inst_ldhu | inst_stb | inst_sth | inst_stw | inst_mulhwu | inst_divwu | inst_modwu | inst_b | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu;
-    assign dst_is_r1    = inst_bl;
-
-    assign reg_we       = ~(inst_b   | inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu | inst_stw | inst_sth | inst_stb);
-    assign mem_we       =   inst_stw | inst_sth | inst_stb;
-    assign mem_to_reg   =   inst_ldw | inst_ldh | inst_ldb | inst_ldhu | inst_ldbu;
-    assign load_op      =  {inst_ldhu, inst_ldbu, inst_ldw, inst_ldh, inst_ldb};
-    assign store_op     =  {inst_stw , inst_sth , inst_stb};
-
-    assign dest         = dst_is_r1 ? 5'd1 :
-                                      rd;
+        .src1_is_pc     (src1_is_pc     ),
+        .src2_is_imm    (src2_is_imm    ),
+        .src2_is_4      (src2_is_4      ),
+        .src_reg_is_rd  (src_reg_is_rd  ),
+        .rj             (rj             ),
+        .rk             (rk             ),
+        .rd             (rd             ),
+        .imm            (imm            ),
+        .dest           (dest           ),
+        .alu_op         (alu_op         ),
+        .mul_div_op     (mul_div_op     ),
+        .mul_div_sign   (mul_div_sign   ),
+        .branch_op      (branch_op      ),
+        .load_op        (load_op        ),
+        .store_op       (store_op       ),
+        .csr_we         (csr_we         ),
+        .csr_op         (csr_op         ),
+        .csr_addr       (csr_addr       ),
+        .csr_wdata_sel  (csr_wdata_sel  ),
+        .sel_rf_res     (sel_rf_res     ),
+        .reg_we         (reg_we         )
+    );
 
     assign rf_raddr1 = rj;
-    assign rf_raddr2 = (inst_beq | inst_bne | inst_bge | inst_bgeu | inst_blt | inst_bltu) ? rd : rk;
+    assign rf_raddr2 = src_reg_is_rd ? rd : rk;
+    assign rkd       = src_reg_is_rd ? rd : rk;
+
     regfile u_regfile(
         .clk    (clk      ),
+        .reset  (reset    ),
         .raddr1 (rf_raddr1),
         .rdata1 (rf_rdata1),
         .raddr2 (rf_raddr2),
@@ -275,22 +215,38 @@ module id_stage(
         .wdata  (rf_wdata )
         );
 
-    assign rj_eq_rd        = (rf_rdata1 == rf_rdata2);
-    assign rj_lt_rd_unsign = (rf_rdata1 <  rf_rdata2);
-    assign rj_lt_rd_sign   = (rf_rdata1[31] && ~rf_rdata2[31]) ? 1'b1 :
-                             (~rf_rdata1[31] && rf_rdata2[31]) ? 1'b0 : rj_lt_rd_unsign;                                                                                     
-    assign br_taken  = (   inst_beq  &&  rj_eq_rd
-                        || inst_bne  && !rj_eq_rd
-                        || inst_blt  &&  rj_lt_rd_sign
-                        || inst_bge  && !rj_lt_rd_sign
-                        || inst_bltu &&  rj_lt_rd_unsign
-                        || inst_bgeu && !rj_lt_rd_unsign
-                        || inst_jirl
-                        || inst_bl
-                        || inst_b
-                        ); 
-    assign br_target = ({32{inst_beq || inst_bne || inst_bl || inst_b || inst_blt || inst_bge || inst_bltu || inst_bgeu}} & (ds_pc + imm))
-                     | ({32{inst_jirl}}                                                                                   & (rf_rdata1 + imm)) ;
+    assign rj_value  = rf_rdata1;
+    assign rkd_value = rf_rdata2;
 
-    assign br_bus = {br_taken, br_target};
+
+    always @ (posedge clk) begin
+        if (reset) begin
+            ex_load_buffer <= 7'b0;
+            ex_csr_buffer <= 1'b0;
+        end
+        else if (flush) begin
+            ex_load_buffer <= 7'b0;
+            ex_csr_buffer <= 1'b0;
+        end
+        else if (stall[2]&(!stall[3])) begin
+            ex_load_buffer <= 7'b0;
+            ex_csr_buffer <= 1'b0;
+        end
+        else if (!stall[2]) begin
+            ex_load_buffer <= {|load_op, rf_we, rf_waddr};
+            ex_csr_buffer <= |csr_op;
+        end
+    end
+
+    assign {ex_is_load,
+            ex_rf_we,
+            ex_rf_waddr
+           } = ex_load_buffer;
+    assign ex_is_csr = ex_csr_buffer;
+    //ex段为load指令，且发生数据相关时，id段需要被暂停
+    assign stallreq_load = ex_is_load & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
+    assign stallreq_csr  = ex_is_csr  & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
+    assign stallreq_id   = stallreq_load | stallreq_csr;
+
+
 endmodule
