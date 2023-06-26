@@ -135,19 +135,19 @@ module mem_stage
         .out(byte_sel      )
     );
 
-    assign ms_result = (inst_ld_b  & byte_sel[0]) ? {{24{data_temp[ 7]}}, data_temp[ 7: 0]       } :
-                       (inst_ld_b  & byte_sel[1]) ? {{16{data_temp[15]}}, data_temp[15: 8],  8'b0} :
-                       (inst_ld_b  & byte_sel[2]) ? {{ 8{data_temp[23]}}, data_temp[23:16], 16'b0} :
-                       (inst_ld_b  & byte_sel[3]) ? {                     data_temp[31:24], 24'b0} :
-                       (inst_ld_bu & byte_sel[0]) ? { 24'b0, data_temp[ 7: 0]       }              :
-                       (inst_ld_bu & byte_sel[1]) ? { 16'b0, data_temp[15: 8],  8'b0}              :
-                       (inst_ld_bu & byte_sel[2]) ? {  8'b0, data_temp[23:16], 16'b0}              :
-                       (inst_ld_bu & byte_sel[3]) ? {        data_temp[31:24], 24'b0}              :
-                       (inst_ld_h  & byte_sel[0]) ? {{16{data_temp[15]}}, data_temp[15: 0]       } :
-                       (inst_ld_h  & byte_sel[2]) ? {                     data_temp[15: 0], 16'b0} :
-                       (inst_ld_hu & byte_sel[0]) ? { 16'b0, data_temp[15: 0]       }              :
-                       (inst_ld_hu & byte_sel[2]) ? {        data_temp[15: 0], 16'b0}              :
-                       (inst_ld_w  & byte_sel[0]) ?   data_temp                                    :
+    assign ms_result = (inst_ld_b  & byte_sel[0]) ? {{24{data_temp[ 7]}}, data_temp[ 7: 0]} :
+                       (inst_ld_b  & byte_sel[1]) ? {{24{data_temp[15]}}, data_temp[15: 8]} :
+                       (inst_ld_b  & byte_sel[2]) ? {{24{data_temp[23]}}, data_temp[23:16]} :
+                       (inst_ld_b  & byte_sel[3]) ? {{24{data_temp[31]}}, data_temp[31:24]} :
+                       (inst_ld_bu & byte_sel[0]) ? { 24'b0, data_temp[ 7: 0]}              :
+                       (inst_ld_bu & byte_sel[1]) ? { 24'b0, data_temp[15: 8]}              :
+                       (inst_ld_bu & byte_sel[2]) ? { 24'b0, data_temp[23:16]}              :
+                       (inst_ld_bu & byte_sel[3]) ? { 24'b0, data_temp[31:24]}              :
+                       (inst_ld_h  & byte_sel[0]) ? {{16{data_temp[15]}}, data_temp[15: 0]} :
+                       (inst_ld_h  & byte_sel[2]) ? {{16{data_temp[31]}}, data_temp[31:16]} :
+                       (inst_ld_hu & byte_sel[0]) ? { 16'b0, data_temp[15: 0]}              :
+                       (inst_ld_hu & byte_sel[2]) ? { 16'b0, data_temp[31:16]}              :
+                       (inst_ld_w  & byte_sel[0]) ?   data_temp                             :
                                                       32'b0; // inst_ll ? 
 
     assign {csr_we,

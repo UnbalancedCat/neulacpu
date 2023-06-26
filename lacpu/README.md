@@ -34,29 +34,7 @@
 
 
 
-#### alu_op
-
-add.w, addi.w, pcaddu12i, ld.b, ld.h, ld.bu, ld.hu, ld.w, st.b, st.h, st.w, b, bl, jirl
-
-sub.w
-
-slt, sltu, stli, sltui
-
-and, andi
-
-nor
-
-or, ori
-
-xor, xori
-
-sll.w, slli.w
-
-srl.w, srli.w
-
-sra.w, srai.w
-
-lui12i.w
+测试目前使用 **[CDP_EDE_local](https://gitee.com/loongson-edu/cdp_ede_local)** 进行，已测试通过 func 的 n1~n46
 
 
 
@@ -82,14 +60,14 @@ lui12i.w
 | √    | ANDI      | and i rd, rj, ui12  | ui12 立即数零扩展                           |
 | √    | ORI       | ori rd, rj, ui 12   |                                             |
 | √    | XORI      | xori rd, rj, ui12   |                                             |
-| -    | NOP       | andi r0, r0, 0      |                                             |
-|      | MUL.W     | mul.w rd, rj, rk    | 操作数视为有符号数，结果符号扩展            |
-|      | MULH.W    | mulh.w rd, rj, rk   | 操作数视为有符号数，结果的 [63:32] 符号扩展 |
-|      | MULH.WU   | mulh.wu rd, rj, rk  | 操作数视为无符号数                          |
-|      | DIV.W     | div.w rd, rj, rk    | 操作数视为有符号数，结果符号扩展            |
-|      | MOD.W     | mod.w rd, rj, rk    |                                             |
-|      | DIV.WU    | div.wu rd, rj, rk   | 操作数视为无符号数                          |
-|      | MOD,WU    | mod.wu rd, rj, rk   |                                             |
+| √    | NOP       | andi r0, r0, 0      |                                             |
+| √    | MUL.W     | mul.w rd, rj, rk    | 操作数视为有符号数，结果符号扩展            |
+| √    | MULH.W    | mulh.w rd, rj, rk   | 操作数视为有符号数，结果的 [63:32] 符号扩展 |
+| √    | MULH.WU   | mulh.wu rd, rj, rk  | 操作数视为无符号数                          |
+| √    | DIV.W     | div.w rd, rj, rk    | 操作数视为有符号数，结果符号扩展            |
+| √    | MOD.W     | mod.w rd, rj, rk    |                                             |
+| √    | DIV.WU    | div.wu rd, rj, rk   | 操作数视为无符号数                          |
+| √    | MOD,WU    | mod.wu rd, rj, rk   |                                             |
 
 
 ### 移位运算类
@@ -107,12 +85,12 @@ lui12i.w
 
 | √    | 指令 | 格式                 | 说明               |
 | ---- | ---- | -------------------- | ------------------ |
-| -    | BEQ  | beq rj, rd, offs16   |                    |
-| -    | BNE  | bne rj, rd, offs16   |                    |
-| -    | BLT  | blt rj, rd, offs16   | 操作数视为有符号数 |
-| -    | BGE  | bge rj, rd, offs16   | 操作数视为有符号数 |
-| -    | BLTU | bltu rj, rd, of fs16 |                    |
-| -    | BGEU | bgeu rj, rd, offs16  |                    |
+| √    | BEQ  | beq rj, rd, offs16   |                    |
+| √    | BNE  | bne rj, rd, offs16   |                    |
+| √    | BLT  | blt rj, rd, offs16   | 操作数视为有符号数 |
+| √    | BGE  | bge rj, rd, offs16   | 操作数视为有符号数 |
+| √    | BLTU | bltu rj, rd, of fs16 |                    |
+| √    | BGEU | bgeu rj, rd, offs16  |                    |
 | √    | B    |                      |                    |
 | √    | BL   |                      |                    |
 | √    | JIRL |                      |                    |

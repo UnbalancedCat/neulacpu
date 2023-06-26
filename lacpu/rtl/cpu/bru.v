@@ -36,10 +36,10 @@ module bru(
            } = branch_op;
 
     assign rj_eq_rd  = (rj_value == rkd_value);
-    assign rj_lt_rd  = (rj_value <  rkd_value);
-    assign rj_ltu_rd = (rj_value[31] && ~rkd_value[31]) ? 1'b1 :
-                        (~rj_value[31] && rkd_value[31]) ? 1'b0 :
-                                                           rj_lt_rd;
+    assign rj_ltu_rd = (rj_value <  rkd_value);
+    assign rj_lt_rd  = (rj_value[31] && ~rkd_value[31]) ? 1'b1 :
+                       (~rj_value[31] && rkd_value[31]) ? 1'b0 :
+                                                          rj_ltu_rd;
     assign br_taken  = (   inst_beq  &&  rj_eq_rd
                         || inst_bne  && !rj_eq_rd
                         || inst_blt  &&  rj_lt_rd

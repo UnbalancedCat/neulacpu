@@ -67,6 +67,7 @@ module exe_stage
 
     wire        br_taken;
     wire [31:0] br_target;
+    wire        br_flush;
 
     wire        data_sram_en_temp;
 
@@ -122,6 +123,8 @@ module exe_stage
                            inst      //31 :0
                           };
     
+    assign br_flush = br_taken;
+
     always @ (posedge clk) begin
         if (reset) begin
             ds_to_es_bus_r <= 0;
@@ -134,7 +137,7 @@ module exe_stage
             ds_to_es_bus_r <= 0;
         end
         //nop, id not stall and br_bus[32]
-        else if (!stall[2]&br_bus[32]) begin
+        else if (!stall[2]&br_flush) begin
             ds_to_es_bus_r <= 0;
         end
         // id not stall so can go on
@@ -210,8 +213,9 @@ module exe_stage
         .mul_div_result(mul_div_result      )
     );
 
-    assign es_result = |mul_div_op ? mul_div_result :
-                                     alu_result;
+    assign es_result = (|mul_div_op         ) ? mul_div_result :
+                       (|load_op | |store_op) ? data_sram_addr :
+                                                alu_result;
     
     assign csr_wdata = csr_wdata_sel ? imm : src1;
     assign csr_bus = {csr_we,
