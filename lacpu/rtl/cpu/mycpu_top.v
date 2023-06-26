@@ -1,14 +1,14 @@
-module mycpu
+module mycpu_top
 #(
     parameter FS_TO_DS_BUS_WD = 32,
-    parameter DS_TO_ES_BUS_WD = 206,
+    parameter DS_TO_ES_BUS_WD = 237,
     parameter ES_TO_MS_BUS_WD = 175,
     parameter MS_TO_WS_BUS_WD = 102,
     parameter WS_TO_RF_BUS_WD = 38,
 
-    parameter MS_TO_ES_BUS_WD = 32,
-    parameter WS_TO_ES_BUS_WD = 32,
-    parameter BR_BUS_WD = 33
+    parameter MS_TO_ES_BUS_WD = 38,
+    parameter WS_TO_ES_BUS_WD = 38,
+    parameter BR_BUS_WD       = 33
     
 )
 (
@@ -44,11 +44,14 @@ module mycpu
     wire [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus;
     wire [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus;
 
+    wire [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus;
+    wire [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus;
+
     wire [BR_BUS_WD       -1:0] br_bus;
 
     wire        flush;
     wire        stallreq_es;
-    wire        stallreq_id;
+    wire        stallreq_ds;
     wire [ 5:0] stall;
     wire        except_en;
     wire [31:0] new_pc;
@@ -76,7 +79,7 @@ module mycpu
         .flush           (flush           ),
         .stall           (stall           ),
         .br_taken        (br_bus[32]      ),
-        .stallreq_id     (stallreq_id     ),
+        .stallreq_ds     (stallreq_ds     ),
         .fs_to_ds_bus    (fs_to_ds_bus    ),
         .pc_valid        (inst_sram_en    ),
         .inst_sram_rdata (inst_sram_rdata ),

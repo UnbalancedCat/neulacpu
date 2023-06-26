@@ -1,4 +1,3 @@
-`include "tools.v"
 module inst_decoder(
     input  [31:0] inst,
 
@@ -31,7 +30,7 @@ module inst_decoder(
     output        csr_wdata_sel,
     //output [31:0] csr_vec_l,
 
-    output [ 3:0] sel_rf_res,
+    //output [ 3:0] sel_rf_res,
 
     output       reg_we
 );
@@ -428,7 +427,7 @@ module inst_decoder(
     assign csr_op    = {inst_csrrd,
                         inst_csrwr,
                         inst_csrxchg,
-                        inst_rdcntid_w,  
+                        inst_rdcntid_w,
                         inst_rdcntvh_w,
                         inst_rdcntvl_w,
                         inst_sc_w
@@ -439,8 +438,8 @@ module inst_decoder(
 
 
     // rf_res from
-    assign sel_rf_res[0] = inst_jirl | inst_bl;
-    assign sel_rf_res[1] = |load_op;
-    assign sel_rf_res[2] = |csr_op;
-    assign sel_rf_res[3] = |mul_div_op;
+    // assign sel_rf_res[0] = inst_jirl | inst_bl;
+    // assign sel_rf_res[1] = |load_op;
+    // assign sel_rf_res[2] = |csr_op;
+    // assign sel_rf_res[3] = |mul_div_op;
 endmodule

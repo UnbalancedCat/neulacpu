@@ -1,7 +1,7 @@
 module id_stage
 #(
     parameter FS_TO_DS_BUS_WD = 32,
-    parameter DS_TO_ES_BUS_WD = 206,
+    parameter DS_TO_ES_BUS_WD = 237,
     parameter WS_TO_RF_BUS_WD = 38
 )
 (
@@ -12,7 +12,7 @@ module id_stage
     input  [ 5:0] stall,
     input         br_taken,
 
-    output        stallreq_id,
+    output        stallreq_ds,
 
     input         pc_valid,   
     input  [31:0] inst_sram_rdata,
@@ -62,12 +62,12 @@ module id_stage
     wire [31:0] inst;
     wire [31:0] next_inst;
 
-    wire        rf_raddr1;
+    wire [ 4:0] rf_raddr1;
     wire [31:0] rf_rdata1;
-    wire        rf_raddr2;
+    wire [ 4:0] rf_raddr2;
     wire [31:0] rf_rdata2;
     wire        rf_we;
-    wire        rf_waddr;
+    wire [ 4:0] rf_waddr;
     wire [31:0] rf_wdata;
 
     wire [31:0] rj_value;
@@ -91,25 +91,25 @@ module id_stage
     assign csr_vec_l = 0; //TODO!
 
     assign csr_vec = {csr_vec_h_r, csr_vec_l};
-    assign ds_to_es_bus = {csr_op                               ,//205:199
-                           csr_wdata_sel                        ,//198:198
-                           csr_addr                             ,//197:184
-                           csr_we                               ,//183:183
-                           alu_op                               ,//182:171
-                           mul_div_op       & {4{pc_valid_r}}   ,//170:167
-                           mul_div_sign     & pc_valid_r        ,//166:166
-                           branch_op        & {9{pc_valid_r}}   ,//165:157
-                           store_op         & {3{pc_valid_r}}   ,//156:154
-                           load_op          & {6{pc_valid_r}}   ,//153:148
-                           reg_we           & pc_valid_r        ,//147:147
-                           src1_is_pc                           ,//146:146
-                           src2_is_imm                          ,//145:145
-                           src2_is_4                            ,//144:144
-                           rj                                   ,//143:139
-                           rkd                                  ,//138:134
-                           rj_value                             ,//133:102
-                           rkd_value                            ,//101:70
-                           dest                                 ,//69 :65
+    assign ds_to_es_bus = {csr_op                               ,//236:230
+                           csr_wdata_sel                        ,//229:229
+                           csr_addr                             ,//228:215
+                           csr_we                               ,//214:214
+                           alu_op                               ,//213:202
+                           mul_div_op       & {4{pc_valid_r}}   ,//198:189
+                           mul_div_sign     & pc_valid_r        ,//197:197
+                           branch_op        & {9{pc_valid_r}}   ,//196:188
+                           store_op         & {3{pc_valid_r}}   ,//187:185
+                           load_op          & {6{pc_valid_r}}   ,//184:179
+                           reg_we           & pc_valid_r        ,//178:178
+                           src1_is_pc                           ,//177:177
+                           src2_is_imm                          ,//176:176
+                           src2_is_4                            ,//175:175
+                           rj                                   ,//174:170
+                           rkd                                  ,//169:165
+                           rj_value                             ,//164:133
+                           rkd_value                            ,//132:101
+                           dest                                 ,//100:96
                            imm                                  ,//95 :64
                            ds_pc                                ,//63 :32
                            inst             & {32{pc_valid_r}}   //31 :0
@@ -195,7 +195,6 @@ module id_stage
         .csr_op         (csr_op         ),
         .csr_addr       (csr_addr       ),
         .csr_wdata_sel  (csr_wdata_sel  ),
-        .sel_rf_res     (sel_rf_res     ),
         .reg_we         (reg_we         )
     );
 
@@ -246,7 +245,7 @@ module id_stage
     //ex段为load指令，且发生数据相关时，id段需要被暂停
     assign stallreq_load = ex_is_load & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
     assign stallreq_csr  = ex_is_csr  & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
-    assign stallreq_id   = stallreq_load | stallreq_csr;
+    assign stallreq_ds   = stallreq_load | stallreq_csr;
 
 
 endmodule

@@ -62,7 +62,7 @@ module wb_stage
 
     assign debug_wb_pc       = ws_pc;
     assign debug_wb_rf_we    = {4{reg_we}};
-    assign debug_wb_rf_wnum  = ms_final_result;
+    assign debug_wb_rf_wnum  = dest;
     assign debug_wb_rf_wdata = ms_final_result;
 
 endmodule

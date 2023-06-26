@@ -68,7 +68,7 @@ module mem_stage
 
     assign ms_to_es_bus = {reg_we,
                            dest,
-                           es_result
+                           (|load_op) ? ms_result : es_result
                           };
 
     assign ms_to_ws_bus = {reg_we           ,//101:101

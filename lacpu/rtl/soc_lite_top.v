@@ -35,7 +35,7 @@ module soc_lite_top
     wire [31:0] cpu_data_rdata;
    
     //cpu
-    mycpu mycpu(
+    mycpu_top mycpu_top(
         .clk              (cpu_clk   ),
         .resetn           (cpu_resetn),  //low active
 

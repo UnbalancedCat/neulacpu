@@ -6,9 +6,9 @@ module lsu(
     input  [31:0] imm,
 
     output        data_sram_en,
-    output        data_sram_we,
-    output        data_sram_addr,
-    output        data_sram_wdata
+    output [ 3:0] data_sram_we,
+    output [31:0] data_sram_addr,
+    output [31:0] data_sram_wdata
 );
     wire        inst_ll_w;
     wire        inst_ld_b;

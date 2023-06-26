@@ -44,9 +44,6 @@ module alu(
   wire [31:0] sll_result; 
   wire [63:0] sr64_result; 
   wire [31:0] sr_result; 
-  wire [63:0] mul64_result;
-  wire [63:0] mulu64_result;
-  wire [31:0] mul_result;
 
   // 32-bit adder
   wire [31:0] adder_a;
@@ -77,7 +74,7 @@ module alu(
   assign or_result  = alu_src1 | alu_src2;
   assign nor_result = ~or_result;
   assign xor_result = alu_src1 ^ alu_src2;
-  assign lui_result = {alu_src2[19:0], 12'b0};
+  assign lui_result = alu_src2;
 
   // SLL result 
   assign sll_result = alu_src1 << alu_src2[4:0];
