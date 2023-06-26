@@ -38,4 +38,5 @@ SECTIONS
   }
 
   PROVIDE(end = .);
+  PROVIDE(ioports = 0xa0000000);
 }
