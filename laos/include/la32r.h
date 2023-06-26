@@ -1,7 +1,15 @@
+
+
 #include "asm.h"
 #include "defs.h"
 #include "latype.h"
 #include "macro.h"
+
+#ifndef __loongarch32r
+#define __loongarch32r
+#endif
+
+#include "larchintrin.h"
 
 #ifndef LA32R_H__
 #define LA32R_H__
@@ -56,18 +64,10 @@ static inline uint r_ra() {
 // mem misc
 //
 
-static inline void dbar() {
-  asm volatile("dbar 0");
-}
-
-static inline void ibar() {
-  asm volatile("ibar 0");
-}
-
 // need to be tested
 static inline void synchronize() {
-    dbar();
-    ibar();
+    __dbar(0);
+    __ibar(0);
 }
 
 
@@ -100,5 +100,7 @@ static inline uint scw(uint wdata, intptr_t addr) {
           "r"  (addr));
     return recv;
 }
+
+
 
 #endif

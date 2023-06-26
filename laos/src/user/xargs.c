@@ -29,11 +29,9 @@ int main(int argc, char *argv[]) {
 
     char *tok = strtok(input, " ");
     while (tok) {
-        if (*tok != '\n') {
-            args = realloc(args, (argc + 1) * sizeof(char *));
-            args[argc] = tok;
-            argc += 1;
-        }
+        args = realloc(args, (argc + 1) * sizeof(char *));
+        args[argc] = tok;
+        argc += 1;
         tok = strtok(NULL, " ");
     }
 

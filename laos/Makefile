@@ -28,15 +28,16 @@ LD_CSRIPT	:= kernel.ld
 EXTRA_MACRO	:= # NDEBUG
 
 EXTRA_FLAGS =  -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -gdwarf-2
+EXTRA_FLAGS += -mfpu=none -march=loongarch32r -mabi=ilp32s
 EXTRA_FLAGS += -MD
 EXTRA_FLAGS += -ffreestanding -fno-common -nostdlib
 EXTRA_FLAGS += -I.
 EXTRA_FLAGS += -fno-pie -no-pie
 EXTRA_FLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
-COMMONFLAGS	:= $(EXTRA_FLAGS) -march=loongarch32r
+COMMONFLAGS	:= $(EXTRA_FLAGS)
 CPPFLAGS	+= $(addprefix -D,$(EXTRA_MACRO)) -I$(CURDIR)/include
-CFLAGS		+= $(COMMONFLAGS) -O
+CFLAGS		+= $(COMMONFLAGS)
 LDFLAGS		+= $(COMMONFLAGS) -z max-page-size=4096 -T$(LD_CSRIPT)
 
 .PHONY: all build clean
@@ -70,3 +71,6 @@ usr:
 	@TOP_BUILD_DIR=$(ABS_BUILD) \
 	CPPFLAGS="$(CPPFLAGS)"		\
 	$(MAKE) native -C $(TOP_SRC_DIR)/user -j$(NPROC)
+
+tcpl:
+	$(CC) --target-help
