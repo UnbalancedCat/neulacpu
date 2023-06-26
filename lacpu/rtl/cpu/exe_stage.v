@@ -71,7 +71,7 @@ module exe_stage
     wire        data_sram_en_temp;
 
     wire        stallreq_for_mul_div;
-    wire [31:0] mul_div_result; // TODO!!!
+    wire [31:0] mul_div_result;
     wire [31:0] es_result;
 
     wire [31:0] csr_wdata;
@@ -205,8 +205,8 @@ module exe_stage
         .stallreq      (stallreq_for_mul_div),
         .mul_div_op    (mul_div_op          ),
         .mul_div_sign  (mul_div_sign        ),
-        .a             (rj_value            ),
-        .b             (rkd_value           ),
+        .a             (alu_src1            ),
+        .b             (alu_src2            ),
         .mul_div_result(mul_div_result      )
     );
 

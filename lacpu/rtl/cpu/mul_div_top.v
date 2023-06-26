@@ -10,7 +10,7 @@ module mul_div_top(
     input  [31:0] a,
     input  [31:0] b,
 
-    output [63:0] mul_div_result
+    output [31:0] mul_div_result
 );
     wire        stallreq_for_mul;
     wire        stallreq_for_div;
@@ -34,8 +34,8 @@ module mul_div_top(
     assign div_en = mul_div_op[2] | mul_div_op[3];
 
     assign sign_flag = a[31] ^ b[31];
-    assign src_a = (mul_div_sign || a[31]) ? ({1'b0, ~a[30:0] + 1'b0}) : a;
-    assign src_b = (mul_div_sign || b[31]) ? ({1'b0, ~b[30:0] + 1'b0}) : b;
+    assign src_a = (mul_div_sign & a[31]) ? (~a[31:0] + 1'b1) : a;
+    assign src_b = (mul_div_sign & b[31]) ? (~b[31:0] + 1'b1) : b;
 
     mul_div_lock u_mul_div_lock(
     .clk              (clk              ),
@@ -78,10 +78,10 @@ module mul_div_top(
     );
 
     assign stallreq = stallreq_for_mul | stallreq_for_div;
-    assign mul_div_result = mul_div_op[0] ? result_l  :
-                            mul_div_op[1] ? result_h  :
-                            mul_div_op[2] ? quotient  :
-                            mul_div_op[3] ? remainder :
+    assign mul_div_result = mul_div_op[0] ? (mul_div_sign & (a[31] ^ b[31]) & |result_l ) ? {               ~result_l[31:0]  + 1'b1} : result_l  :
+                            mul_div_op[1] ? (mul_div_sign & (a[31] ^ b[31]) & |result_h ) ? {a[31] ^ b[31], ~result_h[30:0]        } : result_h  :
+                            mul_div_op[2] ? (mul_div_sign & (a[31] ^ b[31]) & |quotient ) ? {a[31] ^ b[31], ~quotient[30:0]  + 1'b1} : quotient  :
+                            mul_div_op[3] ? (mul_div_sign &          a[31]  & |remainder) ? {a[31]        , ~remainder[30:0] + 1'b1} : remainder :
                                             32'b0;
     
 endmodule
