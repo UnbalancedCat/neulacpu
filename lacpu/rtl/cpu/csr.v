@@ -1,59 +1,33 @@
-`define CRMD_ADDR       14'h0
-`define PRMD_ADDR       14'h1
-`define EUEN_ADDR       14'h2
-`define ECFG_ADDR       14'h4
-`define ESTAT_ADDR      14'h5
-`define ERA_ADDR        14'h6
-`define BADV_ADDR       14'h7
-`define EENTRY_ADDR     14'hc
-`define TLBIDX_ADDR     14'h10
-`define TLBEHI_ADDR     14'h11
-`define TLBELO0_ADDR    14'h12
-`define TLBELO1_ADDR    14'h13
-`define ASID_ADDR       14'h18
-`define PGDL_ADDR       14'h19
-`define PGDH_ADDR       14'h1a
-`define PGD_ADDR        14'h1b
-`define CPUID_ADDR      14'h20
-`define SAVE0_ADDR      14'h30
-`define SAVE1_ADDR      14'h31
-`define SAVE2_ADDR      14'h32
-`define SAVE3_ADDR      14'h33
-`define TID_ADDR        14'h40
-`define TCFG_ADDR       14'h41
-`define TVAL_ADDR       14'h42
-`define TICLR_ADDR      14'h44
-`define LLBCTL_ADDR     14'h60
-`define TLBRENTRY_ADDR  14'h88
-`define CTAG_ADDR       14'h98
-`define DMW0_ADDR       14'h180
-`define DMW1_ADDR       14'h181
-
+`include "csr.hv"
 module csr(
     input        clk,
     input        reset,
     input        stall,
 
     input  [31:0] pc,
+    input  [31:0] src1,
 
     input         csr_we,
-    input  [ 3:0] csr_op,
+    input  [63:0] csr_vec,
+    input  [ 6:0] csr_op,
     input  [13:0] csr_addr,
     input         csr_wdata_sel,
     input  [31:0] csr_wdata,
     output [31:0] csr_rdata,
 
     output        except_en,
-    output [31:0] new_pc
+    output [31:0] new_pc,
+
+    output [ 1:0] plv
 );
-    reg  [31:0] crmd;       // 当前模式信息
-    reg  [31:0] prmd;       // 例外前模式信息
-    reg  [31:0] euen;       // 扩展部件是能
+    reg  [31:0] crmd;       //** 当前模式信息
+    reg  [31:0] prmd;       //** 例外前模式信息
+    reg  [31:0] euen;       // 扩展部件使能
     reg  [31:0] ecfg;       // 例外配置
-    reg  [31:0] estat;      // 例外状态
-    reg  [31:0] era;        // 例外返回地址
+    reg  [31:0] estat;      //** 例外状态
+    reg  [31:0] era;        //** 例外返回地址
     reg  [31:0] badv;       // 出错虚地址
-    reg  [31:0] eentry;     // 例外入口地址
+    reg  [31:0] eentry;     //** 例外入口地址
     reg  [31:0] tlbidx;     // TLB 索引
     reg  [31:0] tlbehi;     // TLB 表项最高位
     reg  [31:0] tlbelo0;    // TLB 表项低位 0
@@ -63,10 +37,10 @@ module csr(
     reg  [31:0] pgdh;       // 高半地址空间全局目录基址
     reg  [31:0] pgd;        // 全局目录基址
     reg  [31:0] cpuid;      // 处理器编号
-    reg  [31:0] save0;      // 数据保存0
-    reg  [31:0] save1;      // 数据保存1
-    reg  [31:0] save2;      // 数据保存2
-    reg  [31:0] save3;      // 数据保存3
+    reg  [31:0] save0;      //** 数据保存0
+    reg  [31:0] save1;      //** 数据保存1
+    reg  [31:0] save2;      //** 数据保存2
+    reg  [31:0] save3;      //** 数据保存3
     reg  [31:0] tid;        // 定时器编号
     reg  [31:0] tcfg;       // 定时器配置
     reg  [31:0] tval;       // 定时器值
@@ -87,13 +61,39 @@ module csr(
     wire        inst_rdcntvl_w;
     wire        inst_rdcntvh_w;
 
+    wire        excp_ipe;
+    wire        excp_ine;
+    wire        inst_break;
+    wire        inst_syscall;
+    wire        inst_ertn;
+
     wire [31:0] csr_wdata_temp;
 
+    wire [ 5:0] ecode;
+    wire [ 8:0] esubcode;
+
+    assign plv = except_en                          ? 2'b0            :
+                 inst_ertn                          ? prmd[`PPLV]     :
+                 csr_we && (csr_addr == `CRMD_ADDR) ? csr_wdata[`PLV] :
+                                                      crmd[`PLV];
+
+    assign {excp_ipe, 
+            excp_ine, 
+            inst_break, 
+            inst_syscall, 
+            inst_ertn
+           } = csr_vec[4:0];
+
+    assign {ecode,esubcode} = inst_syscall ? {`ECODE_SYS, 9'b0} :
+                              inst_break   ? {`ECODE_BRK, 9'b0} :
+                              excp_ine     ? {`ECODE_INE, 9'b0} :
+                              excp_ipe     ? {`ECODE_IPE, 9'b0} :
+                                              15'b0;
 
     assign csr_rdata = csr_rdata_r;
 
     always @(*) begin
-        if(|csr_addr) begin
+        if(|csr_op) begin
             case(csr_addr)
                 `CRMD_ADDR       : csr_rdata_r <= crmd;
                 `PRMD_ADDR       : csr_rdata_r <= prmd;
@@ -129,7 +129,7 @@ module csr(
             endcase
         end
         else begin
-           csr_rdata_r <= 32'b0; 
+           //csr_rdata_r <= 32'b0; 
         end
     end
 
@@ -142,11 +142,11 @@ module csr(
             inst_sc_w
            } = csr_op;
 
-    assign csr_wdata_temp = csr_wdata_sel ? csr_rdata_r : csr_wdata;
+    assign csr_wdata_temp = csr_wdata_sel ? (src1 & csr_wdata) | (~src1 & csr_rdata_r) : csr_wdata;
 
     always @(posedge clk) begin
         if(reset) begin
-                crmd        <= 0;
+                crmd        <= 32'd8;
                 prmd        <= 0;
                 euen        <= 0;
                 ecfg        <= 0;
@@ -178,7 +178,22 @@ module csr(
                 dmw1        <= 0;
         end
         else if (except_en) begin
-            // ?
+            if(inst_syscall) begin
+                crmd[ `PLV] <=  2'b0;
+                crmd[  `IE] <=  1'b0;
+
+                prmd[`PPLV] <= crmd[`PLV];
+                prmd[ `PIE] <= crmd[`IE ];
+
+                estat[   `ECODE] <= ecode;
+                estat[`ESUBCODE] <= esubcode;
+
+                era <= pc;
+            end
+            else if(inst_ertn) begin
+                crmd[ `PLV] <= prmd[`PPLV];
+                crmd[  `IE] <= prmd[`PIE ];
+            end     
         end
         else if (csr_we) begin
             case (csr_addr)
@@ -216,6 +231,8 @@ module csr(
         end
     end
 
-    assign except_en = 1'b0; // TODO!
-    assign new_pc = era;     // TODO!
+    assign except_en = excp_ipe | excp_ine | inst_break | inst_syscall | inst_ertn;
+    assign new_pc = inst_syscall ? eentry :
+                    inst_ertn    ? era    :
+                                   32'b0;     // TODO!
 endmodule

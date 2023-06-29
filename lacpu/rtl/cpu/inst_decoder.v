@@ -24,11 +24,13 @@ module inst_decoder(
     output [ 2:0] store_op,
 
     // csr
+    input  [ 1:0] csr_plv,
+
     output        csr_we,
     output [ 6:0] csr_op,
     output [13:0] csr_addr,
     output        csr_wdata_sel,
-    //output [31:0] csr_vec_l,
+    output [31:0] csr_vec_l,
 
     //output [ 3:0] sel_rf_res,
 
@@ -141,6 +143,12 @@ module inst_decoder(
     wire need_si20;
     wire need_si20_pc;
     wire need_si26_pc;
+
+    wire inst_valid;
+    wire excp_ine;
+    
+    wire kernel_inst;
+    wire excp_ipe;
 
 
     assign op_31_26  = inst[31:26];
@@ -434,8 +442,98 @@ module inst_decoder(
                        };
     assign csr_addr  = inst[23:10];
     assign csr_wdata_sel = inst_csrxchg;
-    //assign csr_vec_l = ?; 
+    assign csr_vec_l = {28'b0 ,excp_ipe, excp_ine, inst_break, inst_syscall, inst_ertn}; 
 
+    assign inst_valid = inst_add_w     |
+                        inst_sub_w     |
+                        inst_slt       |
+                        inst_sltu      |
+                        inst_nor       |
+                        inst_and       |
+                        inst_or        |
+                        inst_xor       |
+                        inst_sll_w     |
+                        inst_srl_w     |
+                        inst_sra_w     |
+                        inst_mul_w     |
+                        inst_mulh_w    |
+                        inst_mulh_wu   |
+                        inst_div_w     |
+                        inst_mod_w     |
+                        inst_div_wu    |
+                        inst_mod_wu    |
+                        inst_break     |
+                        inst_syscall   |
+                        inst_slli_w    |
+                        inst_srli_w    |
+                        inst_srai_w    |
+                        //inst_idle      |
+                        inst_slti      |
+                        inst_sltui     |
+                        inst_addi_w    |
+                        inst_andi      |
+                        inst_ori       |
+                        inst_xori      |
+                        inst_ld_b      |
+                        inst_ld_h      |
+                        inst_ld_w      |
+                        inst_st_b      |
+                        inst_st_h      |
+                        inst_st_w      |
+                        inst_ld_bu     |
+                        inst_ld_hu     |
+                        inst_ll_w      |
+                        inst_sc_w      |
+                        inst_jirl      |
+                        inst_b         |
+                        inst_bl        |
+                        inst_beq       |
+                        inst_bne       |
+                        inst_blt       |
+                        inst_bge       |
+                        inst_bltu      |
+                        inst_bgeu      |
+                        inst_lu12i_w   |
+                        inst_pcaddu12i |
+                        inst_csrrd     |
+                        inst_csrwr     |
+                        inst_csrxchg   |
+                        inst_rdcntid_w |
+                        inst_rdcntvh_w |
+                        inst_rdcntvl_w |
+                        inst_ertn      |
+                        //inst_cacop     |
+                        //inst_preld     |
+                        inst_dbar      |
+                        inst_ibar      ;
+                        //inst_tlbsrch   |
+                        //inst_tlbrd     |
+                        //inst_tlbwr     |
+                        //inst_tlbfill   |
+                        //(inst_invtlb && (rd == 5'd0 || 
+                        //                 rd == 5'd1 || 
+                        //                 rd == 5'd2 || 
+                        //                 rd == 5'd3 || 
+                        //                 rd == 5'd4 ||
+                        //                 rd == 5'd5 || 
+                        //                 rd == 5'd6 ));  //invtlb valid op
+
+
+    assign excp_ine = 1'b0;//~inst_valid; // TODO!
+
+    assign kernel_inst = inst_csrrd    |
+                         inst_csrwr    |
+                         inst_csrxchg  |
+                         //inst_cacop    |
+                         //inst_tlbsrch  |
+                         //inst_tlbrd    |
+                         //inst_tlbwr    |
+                         //inst_tlbfill  |
+                         //inst_invtlb   |
+                         inst_ertn     ;
+                         //inst_idle     ;
+
+    assign excp_ipe = kernel_inst && (csr_plv == 2'b11); // TODO!
 
     // rf_res from
     // assign sel_rf_res[0] = inst_jirl | inst_bl;

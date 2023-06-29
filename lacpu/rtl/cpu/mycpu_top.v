@@ -1,8 +1,8 @@
 module mycpu_top
 #(
     parameter FS_TO_DS_BUS_WD = 32,
-    parameter DS_TO_ES_BUS_WD = 237,
-    parameter ES_TO_MS_BUS_WD = 175,
+    parameter DS_TO_ES_BUS_WD = 301,
+    parameter ES_TO_MS_BUS_WD = 271,
     parameter MS_TO_WS_BUS_WD = 102,
     parameter WS_TO_RF_BUS_WD = 38,
 
@@ -57,6 +57,8 @@ module mycpu_top
     wire [31:0] new_pc;
     wire [31:0] csr_vec_h;
 
+    wire [ 1:0] csr_plv;
+
     if_stage if_stage(
         .clk             (clk             ),
         .reset           (reset           ),
@@ -84,6 +86,7 @@ module mycpu_top
         .pc_valid        (inst_sram_en    ),
         .inst_sram_rdata (inst_sram_rdata ),
         .csr_vec_h       (csr_vec_h       ),
+        .csr_plv         (csr_plv         ),
         .ws_to_rf_bus    (ws_to_rf_bus    ),
         .ds_to_es_bus    (ds_to_es_bus    )
     );
@@ -114,6 +117,7 @@ module mycpu_top
         .stall           (stall           ),
         .except_en       (except_en       ),
         .new_pc          (new_pc          ),
+        .csr_plv         (csr_plv         ),
 
         .es_to_ms_bus    (es_to_ms_bus    ),
         .ms_to_es_bus    (ms_to_es_bus    ),

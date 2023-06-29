@@ -1,8 +1,8 @@
 module exe_stage
 #(
     parameter BR_BUS_WD = 33,
-    parameter DS_TO_ES_BUS_WD = 237,
-    parameter ES_TO_MS_BUS_WD = 175,
+    parameter DS_TO_ES_BUS_WD = 301,
+    parameter ES_TO_MS_BUS_WD = 271,
     parameter MS_TO_ES_BUS_WD = 38,
     parameter WS_TO_ES_BUS_WD = 38
 )
@@ -29,6 +29,7 @@ module exe_stage
 
     reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
 
+    wire [63:0] csr_vec;
     wire [ 6:0] csr_op;
     wire        csr_wdata_sel;
     wire [13:0] csr_addr;
@@ -70,6 +71,7 @@ module exe_stage
     wire        br_flush;
 
     wire        data_sram_en_temp;
+    wire [ 3:0] data_sram_we_temp;
 
     wire        stallreq_for_mul_div;
     wire [31:0] mul_div_result;
@@ -79,7 +81,8 @@ module exe_stage
     wire [63:0] csr_bus;
    
 
-    assign {csr_op           ,//236:230
+    assign {csr_vec          ,//300:237
+            csr_op           ,//236:230
             csr_wdata_sel    ,//229:229
             csr_addr         ,//228:215
             csr_we           ,//214:214
@@ -113,12 +116,14 @@ module exe_stage
             ws_result
            } = ws_to_es_bus;
 
-    assign es_to_ms_bus = {csr_bus  ,//174:111
-                           load_op  ,//110:105
-                           store_op ,//102:102
-                           reg_we   ,//101:101
-                           dest     ,//100:96
-                           es_result,//95 :64
+    assign es_to_ms_bus = {csr_vec  ,//270:207
+                           csr_bus  ,//206:143
+                           load_op  ,//142:137
+                           store_op ,//136:134
+                           reg_we   ,//133:133
+                           dest     ,//132:128
+                           es_result,//127:96
+                           src1     ,//95 :64
                            es_pc    ,//63 :32
                            inst      //31 :0
                           };
@@ -177,10 +182,21 @@ module exe_stage
     );
     
     wire csr_cancel;
-    wire csr_cancel_reg;
+    reg  csr_cancel_reg;
     
-    assign csr_cancel = 1'b0;
-    assign csr_cancel_reg = 1'b0;  //TODO!
+    assign csr_cancel = |csr_vec[31:0];
+
+    always @ (posedge clk) begin
+        if (reset) begin
+            csr_cancel_reg <= 0;
+        end
+        else if (flush) begin
+            csr_cancel_reg <= 0;
+        end
+        else if (csr_cancel) begin
+            csr_cancel_reg <= 1;
+        end
+    end
     
     assign br_bus = {br_taken & ~(csr_cancel|csr_cancel_reg),
                      br_target
@@ -194,11 +210,12 @@ module exe_stage
         .imm            (imm              ),
 
         .data_sram_en   (data_sram_en_temp),
-        .data_sram_we   (data_sram_we     ),
+        .data_sram_we   (data_sram_we_temp),
         .data_sram_addr (data_sram_addr   ),
         .data_sram_wdata(data_sram_wdata  )
     );
     assign data_sram_en = (csr_cancel|csr_cancel_reg) ? 1'b0 : data_sram_en_temp;
+    assign data_sram_we = {4{data_sram_en}} & data_sram_we_temp;
 
     // mul_div
     mul_div_top u_mul_div_top(
@@ -217,7 +234,7 @@ module exe_stage
                        (|load_op | |store_op) ? data_sram_addr :
                                                 alu_result;
     
-    assign csr_wdata = csr_wdata_sel ? imm : src1;
+    assign csr_wdata = src2;
     assign csr_bus = {csr_we,
                       csr_wdata_sel,
                       csr_op,

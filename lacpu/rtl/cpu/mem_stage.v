@@ -1,6 +1,6 @@
 module mem_stage
 #(
-    parameter ES_TO_MS_BUS_WD = 175,
+    parameter ES_TO_MS_BUS_WD = 271,
     parameter MS_TO_ES_BUS_WD = 38,
     parameter MS_TO_WS_BUS_WD = 102
 )
@@ -12,6 +12,8 @@ module mem_stage
 
     output        except_en,
     output [31:0] new_pc,
+
+    output [ 1:0] csr_plv,
 
     input  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,
     output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
@@ -25,6 +27,7 @@ module mem_stage
     reg  [31:0] csr_rdata_r;
     reg         stall_flag;
 
+    wire [63:0] csr_vec;
     wire [63:0] csr_bus;
     wire [ 5:0] load_op;
     wire [ 2:0] store_op;
@@ -54,21 +57,25 @@ module mem_stage
     wire [13:0] csr_addr;
     wire [31:0] csr_wdata;
 
+    wire [31:0] src1;
+
     wire [31:0] ms_final_result;
 
-    assign {csr_bus  ,//174:111
-            load_op  ,//110:105
-            store_op ,//102:102
-            reg_we   ,//101:101
-            dest     ,//100:96
-            es_result,//95 :64
+    assign {csr_vec  ,//270:207
+            csr_bus  ,//206:143
+            load_op  ,//142:137
+            store_op ,//136:134
+            reg_we   ,//133:133
+            dest     ,//132:128
+            es_result,//127:96
+            src1     ,//95 :64
             ms_pc    ,//63 :32
             inst      //31 :0
            } = es_to_ms_bus_r;
 
     assign ms_to_es_bus = {reg_we,
                            dest,
-                           (|load_op) ? ms_result : es_result
+                           ms_final_result
                           };
 
     assign ms_to_ws_bus = {reg_we           ,//101:101
@@ -162,7 +169,10 @@ module mem_stage
         .reset          (reset            ),
         .stall          (stall[3]&stall[4]),
         .pc             (ms_pc            ),
+        .src1           (src1             ),
+        .plv            (csr_plv          ),
         .csr_we         (csr_we           ),
+        .csr_vec        (csr_vec          ),
         .csr_op         (csr_op           ),
         .csr_addr       (csr_addr         ),
         .csr_wdata_sel  (csr_wdata_sel    ),

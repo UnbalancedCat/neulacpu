@@ -55,7 +55,7 @@ module if_stage
     assign seq_pc  = fs_pc + 3'h4;
     assign next_pc = br_taken ? br_target : seq_pc;
 
-    assign csr_vec_h = timer_int;
+    assign csr_vec_h = 0; // timer_int; TODO!
 
     assign inst_sram_en     = flush | (br_taken ? 1'b0 : pc_valid);
     assign inst_sram_we     = 4'h0;

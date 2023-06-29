@@ -1,7 +1,7 @@
 module id_stage
 #(
     parameter FS_TO_DS_BUS_WD = 32,
-    parameter DS_TO_ES_BUS_WD = 237,
+    parameter DS_TO_ES_BUS_WD = 301,
     parameter WS_TO_RF_BUS_WD = 38
 )
 (
@@ -17,6 +17,7 @@ module id_stage
     input         pc_valid,   
     input  [31:0] inst_sram_rdata,
     input  [31:0] csr_vec_h,
+    input  [ 1:0] csr_plv,
 
     input  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus,
     input  [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
@@ -87,11 +88,12 @@ module id_stage
             rf_wdata   //31:0
         } = ws_to_rf_bus;
 
-    wire csr_vec_l;
-    assign csr_vec_l = 0; //TODO!
+    wire [31:0] csr_vec_l;
+    wire [63:0] csr_vec;
 
     assign csr_vec = {csr_vec_h_r, csr_vec_l};
-    assign ds_to_es_bus = {csr_op                               ,//236:230
+    assign ds_to_es_bus = {csr_vec                              ,//300:237
+                           csr_op                               ,//236:230
                            csr_wdata_sel                        ,//229:229
                            csr_addr                             ,//228:215
                            csr_we                               ,//214:214
@@ -175,7 +177,6 @@ module id_stage
 
     inst_decoder u_inst_decoder(
         .inst           (inst           ),
-
         .src1_is_pc     (src1_is_pc     ),
         .src2_is_imm    (src2_is_imm    ),
         .src2_is_4      (src2_is_4      ),
@@ -191,10 +192,12 @@ module id_stage
         .branch_op      (branch_op      ),
         .load_op        (load_op        ),
         .store_op       (store_op       ),
+        .csr_plv        (csr_plv        ),
         .csr_we         (csr_we         ),
         .csr_op         (csr_op         ),
         .csr_addr       (csr_addr       ),
         .csr_wdata_sel  (csr_wdata_sel  ),
+        .csr_vec_l      (csr_vec_l      ),
         .reg_we         (reg_we         )
     );
 
