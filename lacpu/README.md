@@ -36,7 +36,7 @@
 
 
 
-测试目前使用 **[CDP_EDE_local](https://gitee.com/loongson-edu/cdp_ede_local)** 进行，已测试通过 func 的 n1~n47
+测试目前使用 **[CDP_EDE_local](https://gitee.com/loongson-edu/cdp_ede_local)** 进行，已测试通过 func 的 n1~n58
 
 
 
@@ -127,13 +127,13 @@
 
 ### 其他杂项指令
 
-| ×     | 指令       | 格式 | 说明 |
+| √    | 指令       | 格式 | 说明 |
 | ---------- | ---- | ---- | ---- |
 | √ | SYSCALL |      |      |
-|  | BREAK |      |      |
-|  | RDTIMEL.W |      |      |
-|  | RDTIMEH.W |      |      |
-|  | RDCNTID |      |      |
+| √ | BREAK |      |      |
+| √ | RDTIMEL.W |      |      |
+| √ | RDTIMEH.W |      |      |
+| √ | RDCNTID |      |      |
 
 
 
