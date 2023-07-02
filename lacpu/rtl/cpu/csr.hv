@@ -22,6 +22,7 @@
 `define TID_ADDR        14'h40
 `define TCFG_ADDR       14'h41
 `define TVAL_ADDR       14'h42
+`define CNTC_ADDR       14'h43
 `define TICLR_ADDR      14'h44
 `define LLBCTL_ADDR     14'h60
 `define TLBRENTRY_ADDR  14'h88

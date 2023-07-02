@@ -5,6 +5,7 @@ module lsu(
     input  [31:0] rkd_value,
     input  [31:0] imm,
 
+    output        excp_ale,
     output        data_sram_en,
     output [ 3:0] data_sram_we,
     output [31:0] data_sram_addr,
@@ -42,6 +43,12 @@ module lsu(
         .in (addr[1:0]),
         .out(byte_sel )
     );
+ 
+    assign excp_ale = data_sram_en & (((inst_st_b | inst_ld_b | inst_ld_bu) &   1'b0      ) |
+                                      ((inst_st_h | inst_ld_h | inst_ld_hu) &   addr[0]   ) |
+                                      ((inst_st_w | inst_ld_w)              & (|addr[1:0])));
+
+
 
     assign data_sram_en    = (|store_op) | (|load_op);
     assign data_sram_we    = inst_st_b ?     byte_sel                         :

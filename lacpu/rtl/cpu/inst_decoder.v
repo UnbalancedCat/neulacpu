@@ -24,7 +24,9 @@ module inst_decoder(
     output [ 2:0] store_op,
 
     // csr
+    input         excp_adef,
     input  [ 1:0] csr_plv,
+    input         csr_has_int,
 
     output        csr_we,
     output [ 6:0] csr_op,
@@ -442,7 +444,7 @@ module inst_decoder(
                        };
     assign csr_addr  = inst[23:10];
     assign csr_wdata_sel = inst_csrxchg;
-    assign csr_vec_l = {28'b0 ,excp_ipe, excp_ine, inst_break, inst_syscall, inst_ertn}; 
+    assign csr_vec_l = {25'b0, excp_adef, excp_ipe, excp_ine, inst_break, inst_syscall, inst_ertn, csr_has_int}; 
 
     assign inst_valid = inst_add_w     |
                         inst_sub_w     |
@@ -519,7 +521,7 @@ module inst_decoder(
                         //                 rd == 5'd6 ));  //invtlb valid op
 
 
-    assign excp_ine = 1'b0;//~inst_valid; // TODO!
+    assign excp_ine = ~inst_valid;
 
     assign kernel_inst = inst_csrrd    |
                          inst_csrwr    |
@@ -533,7 +535,7 @@ module inst_decoder(
                          inst_ertn     ;
                          //inst_idle     ;
 
-    assign excp_ipe = kernel_inst && (csr_plv == 2'b11); // TODO!
+    assign excp_ipe = kernel_inst && (csr_plv == 2'b11);
 
     // rf_res from
     // assign sel_rf_res[0] = inst_jirl | inst_bl;

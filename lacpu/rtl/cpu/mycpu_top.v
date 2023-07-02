@@ -1,6 +1,6 @@
 module mycpu_top
 #(
-    parameter FS_TO_DS_BUS_WD = 32,
+    parameter FS_TO_DS_BUS_WD = 65,
     parameter DS_TO_ES_BUS_WD = 301,
     parameter ES_TO_MS_BUS_WD = 271,
     parameter MS_TO_WS_BUS_WD = 102,
@@ -55,9 +55,9 @@ module mycpu_top
     wire [ 5:0] stall;
     wire        except_en;
     wire [31:0] new_pc;
-    wire [31:0] csr_vec_h;
 
     wire [ 1:0] csr_plv;
+    wire        csr_has_int;
 
     if_stage if_stage(
         .clk             (clk             ),
@@ -66,7 +66,6 @@ module mycpu_top
         .stall           (stall           ),
         .new_pc          (new_pc          ),
         .timer_int       (timer_int       ),
-        .csr_vec_h       (csr_vec_h       ),
         .fs_to_ds_bus    (fs_to_ds_bus    ),
         .br_bus          (br_bus          ),
         .inst_sram_en    (inst_sram_en    ),
@@ -85,8 +84,8 @@ module mycpu_top
         .fs_to_ds_bus    (fs_to_ds_bus    ),
         .pc_valid        (inst_sram_en    ),
         .inst_sram_rdata (inst_sram_rdata ),
-        .csr_vec_h       (csr_vec_h       ),
         .csr_plv         (csr_plv         ),
+        .csr_has_int     (csr_has_int     ),
         .ws_to_rf_bus    (ws_to_rf_bus    ),
         .ds_to_es_bus    (ds_to_es_bus    )
     );
@@ -97,6 +96,7 @@ module mycpu_top
         .flush           (flush           ),
         .stall           (stall           ),
         .stallreq_es     (stallreq_es     ),
+
         .ds_to_es_bus    (ds_to_es_bus    ),    
         .es_to_ms_bus    (es_to_ms_bus    ),    
         .ms_to_es_bus    (ms_to_es_bus    ),    
@@ -118,6 +118,7 @@ module mycpu_top
         .except_en       (except_en       ),
         .new_pc          (new_pc          ),
         .csr_plv         (csr_plv         ),
+        .csr_has_int     (csr_has_int     ),
 
         .es_to_ms_bus    (es_to_ms_bus    ),
         .ms_to_es_bus    (ms_to_es_bus    ),

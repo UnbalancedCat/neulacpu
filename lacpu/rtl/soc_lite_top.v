@@ -15,11 +15,17 @@ module soc_lite_top
     reg  cpu_resetn;
 
     assign pc      = debug_wb_pc[15:0];
-    assign cpu_clk = clk;
+    //assign cpu_clk = clk;
     always @(posedge cpu_clk)
     begin
         cpu_resetn <= resetn;
     end
+    
+    pll pll(
+        .clk_in1(clk),
+        .clk_out1(cpu_clk)
+    );
+    
 
     //cpu inst sram
     wire        cpu_inst_en;

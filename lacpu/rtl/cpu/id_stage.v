@@ -1,6 +1,6 @@
 module id_stage
 #(
-    parameter FS_TO_DS_BUS_WD = 32,
+    parameter FS_TO_DS_BUS_WD = 65,
     parameter DS_TO_ES_BUS_WD = 301,
     parameter WS_TO_RF_BUS_WD = 38
 )
@@ -16,16 +16,15 @@ module id_stage
 
     input         pc_valid,   
     input  [31:0] inst_sram_rdata,
-    input  [31:0] csr_vec_h,
     input  [ 1:0] csr_plv,
+    input         csr_has_int,
 
     input  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus,
     input  [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
     output [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus
 );
+    reg  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus_r;
     reg         pc_valid_r;
-    reg  [31:0] fs_to_ds_bus_r;
-    reg  [31:0] csr_vec_h_r;
 
     reg  [31:0] inst_r;
     reg         stall_flag;
@@ -59,7 +58,6 @@ module id_stage
     wire [13:0] csr_addr;
     wire        csr_wdata_sel;
 
-
     wire [31:0] inst;
     wire [31:0] next_inst;
 
@@ -81,18 +79,28 @@ module id_stage
     wire        stallreq_load;
     wire        stallreq_csr;
 
-    assign ds_pc    = fs_to_ds_bus_r;
+    wire        excp_adef;
+    wire [31:0] csr_vec_h;
+    wire [31:0] csr_vec_l;
+    wire [63:0] csr_vec;
+
+    assign {csr_vec_h,
+            excp_adef,
+            ds_pc
+           } = fs_to_ds_bus_r;
+
+    assign csr_vec = {csr_vec_h, csr_vec_l};
+
     assign br_flush = br_taken;
+
     assign {rf_we   ,  //37:37
             rf_waddr,  //36:32
             rf_wdata   //31:0
         } = ws_to_rf_bus;
 
-    wire [31:0] csr_vec_l;
-    wire [63:0] csr_vec;
+    
 
-    assign csr_vec = {csr_vec_h_r, csr_vec_l};
-    assign ds_to_es_bus = {csr_vec                              ,//300:237
+    assign ds_to_es_bus = {csr_vec          & {64{pc_valid_r}}  ,//300:237
                            csr_op                               ,//236:230
                            csr_wdata_sel                        ,//229:229
                            csr_addr                             ,//228:215
@@ -119,32 +127,27 @@ module id_stage
 
     always @ (posedge clk)begin
         if (reset) begin
-            pc_valid_r <= 1'b0;
-            fs_to_ds_bus_r <= 32'b0;
-            csr_vec_h_r <= 32'b0;
+            pc_valid_r     <= 1'b0;
+            fs_to_ds_bus_r <= 0;
         end
         else if (flush) begin
-            pc_valid_r <= 1'b0;
-            fs_to_ds_bus_r <= 32'b0;
-            csr_vec_h_r <= 32'b0;
+            pc_valid_r     <= 1'b0;
+            fs_to_ds_bus_r <= 0;
         end
         //nop, ID stall and EX not stall
         else if (stall[1] & (!stall[2]))begin
-            pc_valid_r <= 1'b0;
-            fs_to_ds_bus_r <= 32'b0;
-            csr_vec_h_r <= 32'b0;
+            pc_valid_r     <= 1'b0;
+            fs_to_ds_bus_r <= 0;
         end
         //nop, ID not stall but branch
         else if (!stall[1] & br_flush) begin
-            pc_valid_r <= 1'b0;
-            fs_to_ds_bus_r <= 32'b0;
-            csr_vec_h_r <= 32'b0;
+            pc_valid_r     <= 1'b0;
+            fs_to_ds_bus_r <= 0;
         end
         // ID not stall so go on
         else if (!stall[1]) begin
             pc_valid_r <= pc_valid;
             fs_to_ds_bus_r <= fs_to_ds_bus;
-            csr_vec_h_r <= csr_vec_h;
         end
     end
 
@@ -192,7 +195,9 @@ module id_stage
         .branch_op      (branch_op      ),
         .load_op        (load_op        ),
         .store_op       (store_op       ),
+        .excp_adef      (excp_adef      ),
         .csr_plv        (csr_plv        ),
+        .csr_has_int    (csr_has_int    ),
         .csr_we         (csr_we         ),
         .csr_op         (csr_op         ),
         .csr_addr       (csr_addr       ),
@@ -219,7 +224,6 @@ module id_stage
 
     assign rj_value  = rf_rdata1;
     assign rkd_value = rf_rdata2;
-
 
     always @ (posedge clk) begin
         if (reset) begin
@@ -249,6 +253,5 @@ module id_stage
     assign stallreq_load = ex_is_load & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
     assign stallreq_csr  = ex_is_csr  & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
     assign stallreq_ds   = stallreq_load | stallreq_csr;
-
 
 endmodule

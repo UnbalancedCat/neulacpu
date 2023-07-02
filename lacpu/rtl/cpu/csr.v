@@ -7,6 +7,8 @@ module csr(
     input  [31:0] pc,
     input  [31:0] src1,
 
+    input  [31:0] error_va,
+
     input         csr_we,
     input  [63:0] csr_vec,
     input  [ 6:0] csr_op,
@@ -18,40 +20,47 @@ module csr(
     output        except_en,
     output [31:0] new_pc,
 
-    output [ 1:0] plv
+    output [ 1:0] plv_out,
+    output        has_int_out
 );
-    reg  [31:0] crmd;       //** 当前模式信息
-    reg  [31:0] prmd;       //** 例外前模式信息
-    reg  [31:0] euen;       // 扩展部件使能
-    reg  [31:0] ecfg;       // 例外配置
-    reg  [31:0] estat;      //** 例外状态
-    reg  [31:0] era;        //** 例外返回地址
-    reg  [31:0] badv;       // 出错虚地址
-    reg  [31:0] eentry;     //** 例外入口地址
-    reg  [31:0] tlbidx;     // TLB 索引
-    reg  [31:0] tlbehi;     // TLB 表项最高位
-    reg  [31:0] tlbelo0;    // TLB 表项低位 0
-    reg  [31:0] tlbelo1;    // TLB 表项低位 1
-    reg  [31:0] asid;       // 地址空间标识符
-    reg  [31:0] pgdl;       // 低半地址空间全局目录基址
-    reg  [31:0] pgdh;       // 高半地址空间全局目录基址
-    reg  [31:0] pgd;        // 全局目录基址
-    reg  [31:0] cpuid;      // 处理器编号
-    reg  [31:0] save0;      //** 数据保存0
-    reg  [31:0] save1;      //** 数据保存1
-    reg  [31:0] save2;      //** 数据保存2
-    reg  [31:0] save3;      //** 数据保存3
-    reg  [31:0] tid;        // 定时器编号
-    reg  [31:0] tcfg;       // 定时器配置
-    reg  [31:0] tval;       // 定时器值
-    reg  [31:0] ticlr;      // 定时中断清除
-    reg  [31:0] llbctl;     // LLbit 控制
-    reg  [31:0] tlbrentry;  // TLB 重填例外入口地址
-    reg  [31:0] ctag;       // 高速缓存标签
-    reg  [31:0] dmw0;       // 直接映射配置窗口0
-    reg  [31:0] dmw1;       // 直接映射配置窗口1
+    reg  [31:0] crmd;       // ??????
+    reg  [31:0] prmd;       // ???????
+    reg  [31:0] euen;       // ??????
+    reg  [31:0] ecfg;       // ????
+    reg  [31:0] estat;      // ????
+    reg  [31:0] era;        // ??????
+    reg  [31:0] badv;       // ?????
+    reg  [31:0] eentry;     // ??????
+    reg  [31:0] tlbidx;     // TLB ??
+    reg  [31:0] tlbehi;     // TLB ?????
+    reg  [31:0] tlbelo0;    // TLB ???? 0
+    reg  [31:0] tlbelo1;    // TLB ???? 1
+    reg  [31:0] asid;       // ???????
+    reg  [31:0] pgdl;       // ????????????
+    reg  [31:0] pgdh;       // ????????????
+    reg  [31:0] pgd;        // ??????
+    reg  [31:0] cpuid;      // ?????
+    reg  [31:0] save0;      // ????0
+    reg  [31:0] save1;      // ????1
+    reg  [31:0] save2;      // ????2
+    reg  [31:0] save3;      // ????3
+    reg  [31:0] tid;        // ?????
+    reg  [31:0] tcfg;       // ?????
+    reg  [31:0] tval;       // ????
+    reg  [31:0] ticlr;      // ??????
+    reg  [31:0] llbctl;     // LLbit ??
+    reg  [31:0] tlbrentry;  // TLB ????????
+    reg  [31:0] ctag;       // ??????
+    reg  [31:0] dmw0;       // ????????0
+    reg  [31:0] dmw1;       // ????????1
 
     reg  [31:0] csr_rdata_r;
+
+    reg         timer_en;
+    reg  [63:0] timer_64;
+
+    reg         has_int_r;
+    reg  [ 1:0] plv_r;
 
     wire        inst_sc_w;
     wire        inst_csrrd;
@@ -61,6 +70,11 @@ module csr(
     wire        inst_rdcntvl_w;
     wire        inst_rdcntvh_w;
 
+    wire        has_int;
+
+
+    wire        excp_ale;
+    wire        excp_adef;
     wire        excp_ipe;
     wire        excp_ine;
     wire        inst_break;
@@ -71,29 +85,53 @@ module csr(
 
     wire [ 5:0] ecode;
     wire [ 8:0] esubcode;
+    wire        va_error;
+    wire [31:0] bad_va;
 
-    assign plv = except_en                          ? 2'b0            :
-                 inst_ertn                          ? prmd[`PPLV]     :
-                 csr_we && (csr_addr == `CRMD_ADDR) ? csr_wdata[`PLV] :
-                                                      crmd[`PLV];
+    always @(posedge clk) begin
+        if(reset) begin
+            has_int_r <= 0;
+            plv_r     <= 0;
+        end
+        else begin
+            has_int_r <= ((ecfg[`LIE] & estat[`IS]) != 13'b0) & crmd[`IE];
+            plv_r     <= except_en & !inst_ertn             ? 2'b0            :
+                         inst_ertn                          ? prmd[`PPLV]     :
+                         csr_we && (csr_addr == `CRMD_ADDR) ? csr_wdata[`PLV] :
+                                                              crmd[`PLV];
+        end
+    end
 
-    assign {excp_ipe, 
+    // out TODO!
+    assign has_int_out = ((ecfg[`LIE] & estat[`IS]) != 13'b0) & crmd[`IE]; //has_int_r;
+    assign plv_out     = except_en & !inst_ertn             ? 2'b0            :
+                         inst_ertn                          ? prmd[`PPLV]     :
+                         csr_we && (csr_addr == `CRMD_ADDR) ? csr_wdata[`PLV] :
+                                                              crmd[`PLV]; //plv_r;
+
+    assign {excp_ale,
+            excp_adef,
+            excp_ipe, 
             excp_ine, 
             inst_break, 
             inst_syscall, 
-            inst_ertn
-           } = csr_vec[4:0];
+            inst_ertn,
+            has_int
+           } = csr_vec[7:0];
 
-    assign {ecode,esubcode} = inst_syscall ? {`ECODE_SYS, 9'b0} :
-                              inst_break   ? {`ECODE_BRK, 9'b0} :
-                              excp_ine     ? {`ECODE_INE, 9'b0} :
-                              excp_ipe     ? {`ECODE_IPE, 9'b0} :
-                                              15'b0;
+    assign {ecode, esubcode, va_error, bad_va} = excp_adef    ? {`ECODE_ADEF, `ESUBCODE_ADEF, 1'b1, pc      } :
+                                                 has_int      ? {`ECODE_INT , 9'b0          , 1'b0, 32'b0   } :
+                                                 inst_syscall ? {`ECODE_SYS , 9'b0          , 1'b0, 32'b0   } :
+                                                 inst_break   ? {`ECODE_BRK , 9'b0          , 1'b0, 32'b0   } :
+                                                 excp_ine     ? {`ECODE_INE , 9'b0          , 1'b0, 32'b0   } :
+                                                 excp_ipe     ? {`ECODE_IPE , 9'b0          , 1'b0, 32'b0   } :
+                                                 excp_ale     ? {`ECODE_ALE , 9'b0          , 1'b1, error_va} :
+                                                                0;
 
     assign csr_rdata = csr_rdata_r;
 
     always @(*) begin
-        if(|csr_op) begin
+        if(|csr_op[6:4]) begin
             case(csr_addr)
                 `CRMD_ADDR       : csr_rdata_r <= crmd;
                 `PRMD_ADDR       : csr_rdata_r <= prmd;
@@ -127,6 +165,11 @@ module csr(
                 `DMW1_ADDR       : csr_rdata_r <= dmw1;
                 default          : csr_rdata_r <= 32'b0;
             endcase
+        end
+        else if(|csr_op[3:1]) begin
+            csr_rdata_r <= ({33{csr_op[1]}} & timer_64[31: 0]) |
+                           ({33{csr_op[2]}} & timer_64[63:32]) |
+                           ({33{csr_op[3]}} & tid); 
         end
         else begin
            //csr_rdata_r <= 32'b0; 
@@ -168,7 +211,7 @@ module csr(
                 save2       <= 0;
                 save3       <= 0;
                 tid         <= 0;
-                tcfg        <= 0;
+                tcfg        <= 32'hfffffffe;
                 tval        <= 0;
                 ticlr       <= 0;
                 llbctl      <= 0;
@@ -176,9 +219,11 @@ module csr(
                 ctag        <= 0;
                 dmw0        <= 0;
                 dmw1        <= 0;
+
+                timer_en    <= 1'b0;
         end
-        else if (except_en) begin
-            if(inst_syscall) begin
+        else if(except_en) begin
+            if((|csr_vec[7:0] & !inst_ertn) | excp_adef) begin
                 crmd[ `PLV] <=  2'b0;
                 crmd[  `IE] <=  1'b0;
 
@@ -193,46 +238,117 @@ module csr(
             else if(inst_ertn) begin
                 crmd[ `PLV] <= prmd[`PPLV];
                 crmd[  `IE] <= prmd[`PIE ];
-            end     
+            end
+            
+            if(va_error) begin
+               badv <=  bad_va;
+            end
         end
         else if (csr_we) begin
             case (csr_addr)
-                `CRMD_ADDR       : crmd	        <= csr_wdata_temp;
-                `PRMD_ADDR       : prmd	        <= csr_wdata_temp;
-                `EUEN_ADDR       : euen	        <= csr_wdata_temp;
-                `ECFG_ADDR       : ecfg	        <= csr_wdata_temp;
-                `ESTAT_ADDR      : estat	    <= csr_wdata_temp;
-                `ERA_ADDR        : era	        <= csr_wdata_temp;
-                `BADV_ADDR       : badv	        <= csr_wdata_temp;
-                `EENTRY_ADDR     : eentry	    <= csr_wdata_temp;
-                `TLBIDX_ADDR     : tlbidx	    <= csr_wdata_temp;
-                `TLBEHI_ADDR     : tlbehi	    <= csr_wdata_temp;
-                `TLBELO0_ADDR    : tlbelo0	    <= csr_wdata_temp;
-                `TLBELO1_ADDR    : tlbelo1	    <= csr_wdata_temp;
-                `ASID_ADDR       : asid	        <= csr_wdata_temp;
-                `PGDL_ADDR       : pgdl	        <= csr_wdata_temp;
-                `PGDH_ADDR       : pgdh	        <= csr_wdata_temp;
-                `PGD_ADDR        : pgd	        <= csr_wdata_temp;
-                `CPUID_ADDR      : cpuid	    <= csr_wdata_temp;
-                `SAVE0_ADDR      : save0	    <= csr_wdata_temp;
-                `SAVE1_ADDR      : save1	    <= csr_wdata_temp;
-                `SAVE2_ADDR      : save2	    <= csr_wdata_temp;
-                `SAVE3_ADDR      : save3	    <= csr_wdata_temp;
-                `TID_ADDR        : tid	        <= csr_wdata_temp;
-                `TCFG_ADDR       : tcfg	        <= csr_wdata_temp;
-                `TVAL_ADDR       : tval	        <= csr_wdata_temp;
-                `TICLR_ADDR      : ticlr	    <= csr_wdata_temp;
-                `LLBCTL_ADDR     : llbctl	    <= csr_wdata_temp;
-                `TLBRENTRY_ADDR  : tlbrentry	<= csr_wdata_temp;
-                `CTAG_ADDR       : ctag	        <= csr_wdata_temp;
-                `DMW0_ADDR       : dmw0	        <= csr_wdata_temp;
-                `DMW1_ADDR       : dmw1	        <= csr_wdata_temp;
+                `CRMD_ADDR      : begin
+                                  crmd[ `PLV]     <= csr_wdata_temp[ `PLV];
+                                  crmd[  `IE]     <= csr_wdata_temp[  `IE];
+                                  crmd[  `DA]     <= csr_wdata_temp[  `DA];
+                                  crmd[  `PG]     <= csr_wdata_temp[  `PG];
+                                  crmd[`DATF]     <= csr_wdata_temp[`DATF];
+                                  crmd[`DATM]     <= csr_wdata_temp[`DATM];
+                                  end  
+                `PRMD_ADDR      : begin 
+                                  prmd[`PPLV]     <= csr_wdata_temp[`PPLV];
+                                  prmd[ `PIE]     <= csr_wdata_temp[ `PIE];
+                                  end 
+                `EUEN_ADDR      : euen	          <= csr_wdata_temp;
+                `ECFG_ADDR      : begin 
+                                  ecfg            <= csr_wdata_temp;            // ????????????????
+
+                                  end 
+                `ESTAT_ADDR     : estat[1:0]      <= csr_wdata_temp[1:0];
+                `ERA_ADDR       : era	          <= csr_wdata_temp;
+                `BADV_ADDR      : badv	          <= csr_wdata_temp;            // MORE
+                `EENTRY_ADDR    : eentry[31:6]	  <= csr_wdata_temp[31:6];
+                `TLBIDX_ADDR    : tlbidx	      <= csr_wdata_temp;            // PASS
+                `TLBEHI_ADDR    : tlbehi	      <= csr_wdata_temp;            // PASS
+                `TLBELO0_ADDR   : tlbelo0	      <= csr_wdata_temp;            // PASS
+                `TLBELO1_ADDR   : tlbelo1	      <= csr_wdata_temp;            // PASS
+                `ASID_ADDR      : asid[`TLB_ASID] <= csr_wdata_temp[`TLB_ASID]; // MORE
+                `PGDL_ADDR      : pgdl	          <= csr_wdata_temp;
+                `PGDH_ADDR      : pgdh	          <= csr_wdata_temp;
+                `PGD_ADDR       : pgd	          <= csr_wdata_temp;
+                //`CPUID_ADDR     : cpuid	      <= csr_wdata_temp;
+                `SAVE0_ADDR     : save0	          <= csr_wdata_temp;
+                `SAVE1_ADDR     : save1	          <= csr_wdata_temp;
+                `SAVE2_ADDR     : save2	          <= csr_wdata_temp;
+                `SAVE3_ADDR     : save3	          <= csr_wdata_temp;
+                `TID_ADDR       : tid	          <= csr_wdata_temp;
+                `TCFG_ADDR      : begin  
+                                  tcfg[      `EN] <= csr_wdata_temp[      `EN];
+                                  tcfg[`PERIODIC] <= csr_wdata_temp[`PERIODIC];
+                                  tcfg[ `INITVAL] <= csr_wdata_temp[ `INITVAL];
+
+                                  tval	          <= {csr_wdata_temp[ `INITVAL], 2'b0};
+                                  timer_en        <= csr_wdata_temp[`EN];
+                                  end  
+                //`TVAL_ADDR      : tval	          <= {csr_wdata_temp[ `INITVAL], 2'b0};
+                `TICLR_ADDR     : begin
+                                  if(csr_wdata_temp[`CLR]) begin
+                                  estat[11]       <= 1'b0;
+                                  end
+                                  end
+                `LLBCTL_ADDR    : llbctl	      <= csr_wdata_temp;            // PASS
+                `TLBRENTRY_ADDR : tlbrentry	      <= csr_wdata_temp;            // PASS
+                `CTAG_ADDR      : ctag	          <= csr_wdata_temp;
+                `DMW0_ADDR      : begin 
+                                  dmw0[`PLV0]     <= csr_wdata_temp[`PLV0];
+                                  dmw0[`PLV3]     <= csr_wdata_temp[`PLV3];
+                                  dmw0[`DMW_MAT]  <= csr_wdata_temp[`DMW_MAT];
+                                  dmw0[`PSEG]     <= csr_wdata_temp[`PSEG];
+                                  dmw0[`VSEG]     <= csr_wdata_temp[`VSEG];
+                                  end 
+                `DMW1_ADDR      : begin 
+                                  dmw1[`PLV0]     <= csr_wdata_temp[`PLV0];
+                                  dmw1[`PLV3]     <= csr_wdata_temp[`PLV3];
+                                  dmw1[`DMW_MAT]  <= csr_wdata_temp[`DMW_MAT];
+                                  dmw1[`PSEG]     <= csr_wdata_temp[`PSEG];
+                                  dmw1[`VSEG]     <= csr_wdata_temp[`VSEG];
+                                  end
             endcase
+        end
+        else begin
+            // estat
+            if(timer_en && (tval == 32'b0)) begin
+                estat[11] <= 1'b1;
+                timer_en  <= tcfg[`PERIODIC];
+            end
+            //estat[9:0] <= intrpt; // ???
+            
+            // tval
+            if(timer_en) begin
+                if (tval != 32'b0) begin
+                    tval <= tval - 32'b1;
+                end
+                else if (tval == 32'b0) begin
+                    tval <= tcfg[`PERIODIC] ? {tcfg[`INITVAL], 2'b0} : 32'hffffffff;
+                end
+            end
         end
     end
 
-    assign except_en = excp_ipe | excp_ine | inst_break | inst_syscall | inst_ertn;
-    assign new_pc = inst_syscall ? eentry :
-                    inst_ertn    ? era    :
-                                   32'b0;     // TODO!
+    assign except_en = |csr_vec[7:0];
+    assign new_pc = (|csr_vec[7:0] & !inst_ertn) | excp_adef ? eentry :
+                    inst_ertn                                ? era    :
+                                                               32'b0;     // TODO!
+
+
+
+    //timer_64
+    always @(posedge clk) begin
+        if (reset) begin
+            timer_64 <= 64'b0;
+        end
+        else begin
+            timer_64 <= timer_64 + 1'b1;
+        end
+    end
+
 endmodule

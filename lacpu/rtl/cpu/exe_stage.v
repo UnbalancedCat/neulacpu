@@ -30,6 +30,7 @@ module exe_stage
     reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
 
     wire [63:0] csr_vec;
+    wire [63:0] csr_vec_temp;
     wire [ 6:0] csr_op;
     wire        csr_wdata_sel;
     wire [13:0] csr_addr;
@@ -79,9 +80,10 @@ module exe_stage
 
     wire [31:0] csr_wdata;
     wire [63:0] csr_bus;
-   
 
-    assign {csr_vec          ,//300:237
+    wire        excp_ale;
+
+    assign {csr_vec_temp     ,//300:237
             csr_op           ,//236:230
             csr_wdata_sel    ,//229:229
             csr_addr         ,//228:215
@@ -184,7 +186,7 @@ module exe_stage
     wire csr_cancel;
     reg  csr_cancel_reg;
     
-    assign csr_cancel = |csr_vec[31:0];
+    assign csr_cancel = flush ? 1'b0 : |csr_vec[31:0];// TODO!
 
     always @ (posedge clk) begin
         if (reset) begin
@@ -209,6 +211,8 @@ module exe_stage
         .rkd_value      (src2             ),
         .imm            (imm              ),
 
+        .excp_ale       (excp_ale         ),
+
         .data_sram_en   (data_sram_en_temp),
         .data_sram_we   (data_sram_we_temp),
         .data_sram_addr (data_sram_addr   ),
@@ -220,7 +224,7 @@ module exe_stage
     // mul_div
     mul_div_top u_mul_div_top(
         .clk           (clk                 ),
-        .reset         (reset               ),
+        .reset         (reset | flush       ),
         .stall         (stall               ),
         .stallreq      (stallreq_for_mul_div),
         .mul_div_op    (mul_div_op          ),
@@ -241,6 +245,8 @@ module exe_stage
                       csr_addr,
                       csr_wdata
                      };
+
+    assign csr_vec = {csr_vec_temp[63:8], excp_ale, csr_vec_temp[6:0]};
 
     assign stallreq_es = stallreq_for_mul_div;
 

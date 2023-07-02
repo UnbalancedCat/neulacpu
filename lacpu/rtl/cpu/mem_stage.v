@@ -14,6 +14,7 @@ module mem_stage
     output [31:0] new_pc,
 
     output [ 1:0] csr_plv,
+    output        csr_has_int,
 
     input  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,
     output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
@@ -56,6 +57,7 @@ module mem_stage
     wire [ 6:0] csr_op;
     wire [13:0] csr_addr;
     wire [31:0] csr_wdata;
+
 
     wire [31:0] src1;
 
@@ -165,25 +167,27 @@ module mem_stage
            } = csr_bus;
 
     csr u_csr(
-        .clk            (clk              ),
-        .reset          (reset            ),
-        .stall          (stall[3]&stall[4]),
-        .pc             (ms_pc            ),
-        .src1           (src1             ),
-        .plv            (csr_plv          ),
-        .csr_we         (csr_we           ),
-        .csr_vec        (csr_vec          ),
-        .csr_op         (csr_op           ),
-        .csr_addr       (csr_addr         ),
-        .csr_wdata_sel  (csr_wdata_sel    ),
-        .csr_wdata      (csr_wdata        ),
-        .csr_rdata      (csr_rdata        ),
-        .except_en      (except_en        ),
-        .new_pc         (new_pc           )
+        .clk            (clk               ),
+        .reset          (reset             ),
+        .stall          (stall[3]&stall[4] ),
+        .pc             (ms_pc             ),
+        .src1           (src1              ),
+        .error_va       (es_result         ),
+        .plv_out        (csr_plv           ),
+        .has_int_out    (csr_has_int       ),
+        .csr_we         (csr_we            ),
+        .csr_vec        (csr_vec           ),
+        .csr_op         (csr_op            ),
+        .csr_addr       (csr_addr          ),
+        .csr_wdata_sel  (csr_wdata_sel     ),
+        .csr_wdata      (csr_wdata         ),
+        .csr_rdata      (csr_rdata         ),
+        .except_en      (except_en         ),
+        .new_pc         (new_pc            )
     );
     
-    assign ms_final_result = (|load_op) ? ms_result  :
-                             (|csr_op)  ? csr_result :
-                                          es_result;
+    assign ms_final_result = (|load_op)  ? ms_result  :
+                             (|csr_op )  ? csr_result :
+                                           es_result;
 
 endmodule
