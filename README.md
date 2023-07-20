@@ -6,4 +6,5 @@
 
 |文件夹名称|文件夹用处|
 |-|-|
-|lacpu          | 龙芯处理器设计 Verilog |
+| lacpu | 龙芯处理器设计 Verilog |
+| lasoft | 龙芯软件 |
