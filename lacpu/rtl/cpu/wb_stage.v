@@ -60,9 +60,9 @@ module wb_stage
     end
 
 
-    assign debug_wb_pc       = ws_pc;
-    assign debug_wb_rf_we    = {4{reg_we}};
-    assign debug_wb_rf_wnum  = dest;
-    assign debug_wb_rf_wdata = ms_final_result;
+    assign debug_wb_pc       = stall[5] ? 0 : ws_pc;
+    assign debug_wb_rf_we    = stall[5] ? 0 : {4{reg_we}};
+    assign debug_wb_rf_wnum  = stall[5] ? 0 : dest;
+    assign debug_wb_rf_wdata = stall[5] ? 0 : ms_final_result;
 
 endmodule

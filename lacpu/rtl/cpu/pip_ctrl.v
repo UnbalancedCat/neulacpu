@@ -5,6 +5,7 @@ module pip_ctrl(
     input  stallreq_ds,
     input  stallreq_es,
     input  stallreq_axi,
+    input  stallreq_cache,
     output reg flush,
     output reg [`StallBus-1:0] stall
 );
@@ -35,6 +36,10 @@ module pip_ctrl(
         else if (stallreq_es) begin
             flush = 0;
             stall = `StallBus'b011111;
+        end
+        else if(stallreq_cache) begin
+            flush = 0;
+            stall = `StallBus'b111111;
         end
         else begin
             flush = 0;
