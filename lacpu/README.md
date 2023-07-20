@@ -4,6 +4,8 @@
 
 ![指令格式](./doc/pic/指令格式.png)
 
+未更新
+
 最新 op 划分不在遵循下列方式，请参考 **[chiplab/mycpu](https://gitee.com/loongson-edu/chiplab/tree/chiplab_diff/IP/myCPU)** 中的划分方式。
 
 #### op6

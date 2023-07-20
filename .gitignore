@@ -3,15 +3,18 @@
 build/
 ext/
 
-# VIVADO VERILOG
+# VIVADO PROJECT 
 /lacpu/run_vivado/la32r/*
-/lacpu/rtl/xilinx_ip/inst_ram/*
-/lacpu/rtl/xilinx_ip/data_ram/*
-vivado.jou
-vivado.log
 !/lacpu/run_vivado/la32r/la32r.xpr
-!/lacpu/rtl/xilinx_ip/inst_ram/inst_ram.xci
-!/lacpu/run_vivado/la32r/sim
-!/lacpu/rtl/xilinx_ip/inst_ram/inst_ram.coe
-!/lacpu/rtl/xilinx_ip/data_ram/data_ram.xci
-!/lacpu/rtl/xilinx_ip/data_ram/data_ram.coe
+
+# VIVADO IP
+/lacpu/rtl/xilinx_ip/axi_crossbar_1x2/*
+/lacpu/rtl/xilinx_ip/axi_ram/*
+/lacpu/rtl/xilinx_ip/clk_pll/*
+/lacpu/rtl/xilinx_ip/data_bram_bank/*
+
+!/lacpu/rtl/xilinx_ip/axi_crossbar_1x2/axi_crossbar_1x2.xci
+!/lacpu/rtl/xilinx_ip/axi_ram/axi_ram.xci
+!/lacpu/rtl/xilinx_ip/clk_pll/clk_pll.xci
+!/lacpu/rtl/xilinx_ip/data_bram_bank/data_bram_bank.xci
+
