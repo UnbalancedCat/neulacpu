@@ -1,5 +1,6 @@
 default:
 	@echo "Hello World!"
+	@echo $(CURDIR)
 
 submodue-update-init:
 	git submodule update --init
@@ -26,4 +27,10 @@ unpk-gcc: submodue-update-init
 $(LA_TOOLS): unpk-gcc
 
 # prepare loongarch source code
+
+xv6:
+	TOOLPREFIX=$(CURDIR)/$(LA) $(MAKE) -C lasoft/xv6-la build
+
+xv6-clean:
+	$(MAKE) -C lasoft/xv6-la clean
 
