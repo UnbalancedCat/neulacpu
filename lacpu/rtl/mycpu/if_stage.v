@@ -69,7 +69,7 @@ module if_stage
     assign next_pc = br_taken ? br_target : seq_pc;
 
 
-    assign inst_sram_en     = flush | (br_taken ? 1'b0 : pc_valid);
+    assign inst_sram_en     = (/*flush |*/ br_taken) ? 1'b0 : pc_valid;
     assign inst_sram_we     = 4'h0;
     assign inst_sram_addr   = fs_pc;
     assign inst_sram_wdata  = 32'b0;

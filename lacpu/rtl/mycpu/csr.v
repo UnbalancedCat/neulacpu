@@ -223,7 +223,10 @@ module csr(
 
                 timer_en    <= 1'b0;
         end
-        else if(except_en & ~stallreq_axi) begin
+        else if (stallreq_axi) begin
+            
+        end
+        else if(except_en) begin
             if((|csr_vec[7:0] & !inst_ertn) | excp_adef) begin
                 crmd[ `PLV] <=  2'b0;
                 crmd[  `IE] <=  1'b0;

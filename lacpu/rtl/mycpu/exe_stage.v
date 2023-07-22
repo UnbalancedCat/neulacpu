@@ -80,7 +80,8 @@ module exe_stage
 
     wire [31:0] csr_wdata;
     wire [63:0] csr_bus;
-
+    
+    wire        excp_adef;  
     wire        excp_ale;
 
     assign {csr_vec_temp     ,//300:237
@@ -130,7 +131,9 @@ module exe_stage
                            inst      //31 :0
                           };
     
-    assign br_flush = br_taken;
+    assign br_flush = br_taken & ~(csr_cancel|csr_cancel_reg);
+
+    assign excp_adef = csr_vec[6];
 
     always @ (posedge clk) begin
         if (reset) begin
@@ -186,7 +189,7 @@ module exe_stage
     wire csr_cancel;
     reg  csr_cancel_reg;
     
-    assign csr_cancel = flush ? 1'b0 : |csr_vec[31:0];// TODO!
+    assign csr_cancel = /*flush ? 1'b0 :*/ |csr_vec[31:0] | excp_adef;// TODO!
 
     always @ (posedge clk) begin
         if (reset) begin

@@ -106,12 +106,12 @@ module id_stage
                            csr_addr                             ,//228:215
                            csr_we                               ,//214:214
                            alu_op                               ,//213:202
-                           mul_div_op       & {4{pc_valid_r}}   ,//198:189
-                           mul_div_sign     & pc_valid_r        ,//197:197
-                           branch_op        & {9{pc_valid_r}}   ,//196:188
-                           store_op         & {3{pc_valid_r}}   ,//187:185
-                           load_op          & {6{pc_valid_r}}   ,//184:179
-                           reg_we           & pc_valid_r        ,//178:178
+                           mul_div_op       & { 4{pc_valid_r}}  ,//198:189
+                           mul_div_sign     &     pc_valid_r    ,//197:197
+                           branch_op        & { 9{pc_valid_r}}  ,//196:188
+                           store_op         & { 3{pc_valid_r}}  ,//187:185
+                           load_op          & { 6{pc_valid_r}}  ,//184:179
+                           reg_we           &     pc_valid_r    ,//178:178
                            src1_is_pc                           ,//177:177
                            src2_is_imm                          ,//176:176
                            src2_is_4                            ,//175:175
@@ -153,11 +153,11 @@ module id_stage
 
     always @ (posedge clk) begin
         if (reset) begin
-            inst_r <= 64'b0;
+            inst_r <= 32'b0;
             stall_flag <= 1'b0;
         end
         else if (flush) begin
-            inst_r <= 64'b0;
+            inst_r <= 32'b0;
             stall_flag <= 1'b0;
         end
         //if not stall, get inst from inst_sram
