@@ -1,6 +1,3 @@
-[submodule "loongarch64-linux-gnu"]
-	path = loongarch64-linux-gnu
-	url = https://gitee.com/loongarch_community/loongarch64-linux-gnu
 [submodule "nscscc-team-la32r"]
 	path = nscscc-team-la32r
 	url = https://gitee.com/loongson-edu/nscscc-team-la32r
