@@ -189,7 +189,7 @@ module exe_stage
     wire csr_cancel;
     reg  csr_cancel_reg;
     
-    assign csr_cancel = /*flush ? 1'b0 :*/ |csr_vec[31:0] | excp_adef;// TODO!
+    assign csr_cancel = /*flush ? 1'b0 :*/ |csr_vec[31:0] | excp_adef;// TODO?
 
     always @ (posedge clk) begin
         if (reset) begin

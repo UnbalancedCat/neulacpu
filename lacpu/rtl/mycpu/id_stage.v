@@ -29,8 +29,8 @@ module id_stage
     reg  [31:0] inst_r;
     reg         stall_flag;
 
-    reg  [ 6:0] ex_load_buffer;
-    reg         ex_csr_buffer;
+    reg  [ 6:0] es_load_buffer;
+    reg         es_csr_buffer;
 
     wire        br_flush;
     wire [31:0] ds_pc;
@@ -72,10 +72,10 @@ module id_stage
     wire [31:0] rj_value;
     wire [31:0] rkd_value;
 
-    wire [ 4:0] ex_rf_waddr;
-    wire        ex_is_load;
-    wire        ex_is_csr;
-    wire        ex_rf_we;
+    wire [ 4:0] es_dest;
+    wire        es_is_load;
+    wire        es_is_csr;
+    wire        es_reg_we;
     wire        stallreq_load;
     wire        stallreq_csr;
 
@@ -153,11 +153,11 @@ module id_stage
 
     always @ (posedge clk) begin
         if (reset) begin
-            inst_r <= 32'b0;
+            inst_r <= 64'b0;
             stall_flag <= 1'b0;
         end
         else if (flush) begin
-            inst_r <= 32'b0;
+            inst_r <= 64'b0;
             stall_flag <= 1'b0;
         end
         //if not stall, get inst from inst_sram
@@ -227,31 +227,31 @@ module id_stage
 
     always @ (posedge clk) begin
         if (reset) begin
-            ex_load_buffer <= 7'b0;
-            ex_csr_buffer <= 1'b0;
+            es_load_buffer <= 7'b0;
+            es_csr_buffer <= 1'b0;
         end
         else if (flush) begin
-            ex_load_buffer <= 7'b0;
-            ex_csr_buffer <= 1'b0;
+            es_load_buffer <= 7'b0;
+            es_csr_buffer <= 1'b0;
         end
         else if (stall[2]&(!stall[3])) begin
-            ex_load_buffer <= 7'b0;
-            ex_csr_buffer <= 1'b0;
+            es_load_buffer <= 7'b0;
+            es_csr_buffer <= 1'b0;
         end
         else if (!stall[2]) begin
-            ex_load_buffer <= {|load_op, rf_we, rf_waddr};
-            ex_csr_buffer <= |csr_op;
+            es_load_buffer <= {|load_op, reg_we, dest};
+            es_csr_buffer <= |csr_op;
         end
     end
 
-    assign {ex_is_load,
-            ex_rf_we,
-            ex_rf_waddr
-           } = ex_load_buffer;
-    assign ex_is_csr = ex_csr_buffer;
+    assign {es_is_load,
+            es_reg_we,
+            es_dest
+           } = es_load_buffer;
+    assign es_is_csr = es_csr_buffer;
     //ex段为load指令，且发生数据相关时，id段需要被暂停
-    assign stallreq_load = ex_is_load & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
-    assign stallreq_csr  = ex_is_csr  & ex_rf_we & ((ex_rf_waddr==rj_value & rj_value!=0)|(ex_rf_waddr==rkd_value & rkd_value!=0));
+    assign stallreq_load = es_is_load & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
+    assign stallreq_csr  = es_is_csr  & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
     assign stallreq_ds   = stallreq_load | stallreq_csr;
 
 endmodule
