@@ -11,8 +11,6 @@ module if_stage
     input  [ 5:0] stall,
 
     input  [31:0] new_pc,
-    
-    input         timer_int,
 
     output        inst_sram_en   ,
     output [ 3:0] inst_sram_we   ,
@@ -61,7 +59,7 @@ module if_stage
             pc_valid  <= 1'b1;
             fs_pc     <= next_pc;
             excp_adef <= |next_pc[1:0];
-            csr_vec_h <= 0; // timer_int; TODO!
+            csr_vec_h <= 0; // TODO!
         end
     end
 

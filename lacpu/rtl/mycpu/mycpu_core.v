@@ -16,7 +16,7 @@ module mycpu_core
 (
     input         clk,
     input         resetn,
-    output        timer_int,
+    input  [ 7:0] ext_int,
 
     // inst sram interface
     output        inst_sram_en,
@@ -75,7 +75,6 @@ module mycpu_core
         .flush           (flush           ),
         .stall           (stall           ),
         .new_pc          (new_pc          ),
-        .timer_int       (timer_int       ),
         .fs_to_ds_bus    (fs_to_ds_bus    ),
         .br_bus          (br_bus          ),
         .inst_sram_en    (inst_sram_en    ),
@@ -130,6 +129,7 @@ module mycpu_core
         .csr_plv         (csr_plv         ),
         .csr_has_int     (csr_has_int     ),
         .stallreq_axi    (stallreq_cache  ),
+        .ext_int         (ext_int         ),
 
         .es_to_ms_bus    (es_to_ms_bus    ),
         .ms_to_es_bus    (ms_to_es_bus    ),

@@ -16,6 +16,9 @@ module csr(
     input  [13:0] csr_addr,
     input         csr_wdata_sel,
     input  [31:0] csr_wdata,
+
+    input  [ 7:0] ext_int,
+
     output [31:0] csr_rdata,
 
     output        except_en,
@@ -324,7 +327,7 @@ module csr(
                 estat[11] <= 1'b1;
                 timer_en  <= tcfg[`PERIODIC];
             end
-            //estat[9:0] <= intrpt; // ???
+            estat[9:2] <= ext_int; // TODO?
             
             // tval
             if(timer_en) begin

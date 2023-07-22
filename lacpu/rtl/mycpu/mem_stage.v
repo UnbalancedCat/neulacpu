@@ -18,6 +18,8 @@ module mem_stage
 
     input         stallreq_axi,
 
+    input  [ 7:0] ext_int,
+
     input  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,
     output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
     output [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus,
@@ -186,7 +188,8 @@ module mem_stage
         .csr_rdata      (csr_rdata         ),
         .except_en      (except_en         ),
         .new_pc         (new_pc            ),
-        .stallreq_axi   (stallreq_axi      )
+        .stallreq_axi   (stallreq_axi      ),
+        .ext_int        (ext_int           )
     );
     
     assign ms_final_result = (|load_op)  ? ms_result  :

@@ -9,7 +9,7 @@ module mycpu_top
 (
     input         aclk,
     input         aresetn,
-    output        timer_int,
+    input  [ 7:0] ext_int,
 
     output [ 3:0] arid,
     output [31:0] araddr,
@@ -135,6 +135,7 @@ module mycpu_top
     mycpu_core mycpu_core(
         .clk                (clk                ),
         .resetn             (resetn             ),
+        .ext_int            (ext_int            ),
 
         .inst_sram_en       (inst_sram_en       ),
         .inst_sram_we       (inst_sram_we       ),
