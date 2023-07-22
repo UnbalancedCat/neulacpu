@@ -4,3 +4,6 @@
 [submodule "lasoft/la32r-nemu"]
 	path = lasoft/la32r-nemu
 	url = https://gitee.com/wwt_panache/la32r-nemu
+[submodule "lasoft/la32r-Linux"]
+	path = lasoft/la32r-Linux
+	url = https://gitee.com/loongson-edu/la32r-Linux
