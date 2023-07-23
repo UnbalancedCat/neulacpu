@@ -35,7 +35,7 @@ module pip_ctrl(
         end
         else if (stallreq_es) begin
             flush = 0;
-            stall = `StallBus'b011111;
+            stall = `StallBus'b111111;
         end
         // else if(stallreq_cache) begin
         //     flush = 0;
