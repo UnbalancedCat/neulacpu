@@ -56,6 +56,8 @@ module mycpu_core
     wire [BR_BUS_WD       -1:0] br_bus;
 
     wire        flush;
+    //wire        stallreq_fs_for_cache;
+    //wire        stallreq_es_for_cache;
     wire        stallreq_es;
     wire        stallreq_ds;
     wire [ 5:0] stall;
@@ -75,6 +77,7 @@ module mycpu_core
         .flush           (flush           ),
         .stall           (stall           ),
         .new_pc          (new_pc          ),
+        //.stallreq_fs_for_cache     (stallreq_fs_for_cache     ),
         .fs_to_ds_bus    (fs_to_ds_bus    ),
         .br_bus          (br_bus          ),
         .inst_sram_en    (inst_sram_en    ),
@@ -110,6 +113,8 @@ module mycpu_core
         .es_to_ms_bus    (es_to_ms_bus    ),    
         .ms_to_es_bus    (ms_to_es_bus    ),    
         .ws_to_es_bus    (ws_to_es_bus    ),
+
+        //.stallreq_es_for_cache (stallreq_es_for_cache),
 
         .br_bus          (br_bus          ),
 
@@ -157,6 +162,8 @@ module mycpu_core
     pip_ctrl pip_ctrl(
         .reset           (reset           ),
         .except_en       (except_en       ),
+        //.stallreq_fs_for_cache     (stallreq_fs_for_cache     ),
+        //.stallreq_es_for_cache     (stallreq_es_for_cache     ),
         .stallreq_ds     (stallreq_ds     ),
         .stallreq_es     (stallreq_es     ),
         .stallreq_axi    (stallreq_cache  ), // TODO!

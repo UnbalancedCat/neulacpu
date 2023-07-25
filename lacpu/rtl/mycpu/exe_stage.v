@@ -13,6 +13,7 @@ module exe_stage
     input  [ 5:0] stall,
 
     output        stallreq_es,
+    //output        stallreq_es_for_cache,
 
     input  [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus,    
     output [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,    
@@ -28,6 +29,7 @@ module exe_stage
 );
 
     reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
+    reg                        stallreq_es_for_cache_r;
 
     wire [63:0] csr_vec;
     wire [63:0] csr_vec_temp;
@@ -252,5 +254,31 @@ module exe_stage
     assign csr_vec = {csr_vec_temp[63:8], excp_ale, csr_vec_temp[6:0]};
 
     assign stallreq_es = stallreq_for_mul_div;
+    
+    // always @(posedge clk) begin
+    //     if (reset) begin
+    //         stallreq_es_for_cache_r <= 1'b0;
+    //     end
+    //     else if (flush) begin
+    //         stallreq_es_for_cache_r <= 1'b0;
+    //     end
+    //     //nop, id stall and ex not stall
+    //     else if (stall[2] & (!stall[3])) begin
+    //         stallreq_es_for_cache_r <= 1'b0;
+    //     end
+    //     //nop, id not stall and br_bus[32]
+    //     else if (!stall[2] & br_flush) begin
+    //         stallreq_es_for_cache_r <= 1'b0;
+    //     end
+    //     // id not stall so can go on
+    //     else if (!stall[2] & (|load_op | |store_op)) begin
+    //         stallreq_es_for_cache_r <= 1'b1;
+    //     end
+    //     else begin
+    //         stallreq_es_for_cache_r <= 1'b0;
+    //     end
+    // end    
+    
+    // assign stallreq_es_for_cache = stallreq_es_for_cache_r;
 
 endmodule

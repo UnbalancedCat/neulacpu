@@ -12,6 +12,8 @@ module if_stage
 
     input  [31:0] new_pc,
 
+    //output        stallreq_fs_for_cache,
+
     output        inst_sram_en   ,
     output [ 3:0] inst_sram_we   ,
     output [31:0] inst_sram_addr ,
@@ -25,6 +27,8 @@ module if_stage
     
     reg         excp_adef;
     reg  [31:0] csr_vec_h;
+
+    reg         stallreq_fs_for_cache_r;
 
     wire [31:0] seq_pc;
     wire [31:0] next_pc;
@@ -66,6 +70,22 @@ module if_stage
     assign seq_pc  = fs_pc + 3'h4;
     assign next_pc = br_taken ? br_target : seq_pc;
 
+    // always @ (posedge clk) begin
+    //     if (reset) begin
+    //         stallreq_fs_for_cache_r <= 1'b0;
+    //     end
+    //     else if (flush) begin
+    //         stallreq_fs_for_cache_r <= 1'b0;
+    //     end
+    //     else if (!stall[0]) begin
+    //         stallreq_fs_for_cache_r <= 1'b1;
+    //     end
+    //     else begin
+    //         stallreq_fs_for_cache_r <= 1'b0;
+    //     end
+    // end
+
+    // assign stallreq_fs_for_cache = stallreq_fs_for_cache_r & (!br_taken);
 
     assign inst_sram_en     = (/*flush |*/ br_taken) ? 1'b0 : pc_valid;
     assign inst_sram_we     = 4'h0;
