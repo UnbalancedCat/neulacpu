@@ -1,4 +1,56 @@
-module mem_stage
+module mem1_stage
+#(
+    parameter ES_TO_MS_BUS_WD = 271,
+    parameter MS_TO_ES_BUS_WD = 38
+)
+(
+    input         clk,
+    input         reset,
+    input         flush,
+    input  [ 5:0] stall,
+
+    input  [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus,
+    output [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
+    output [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus
+);
+
+reg  [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus_r;
+
+wire        reg_we;
+wire [ 4:0] dest;
+wire [31:0] es_result;
+
+assign ms1_to_ms2_bus = es_to_ms1_bus_r;
+
+assign reg_we    = es_to_ms1_bus_r[133:133];
+assign dest      = es_to_ms1_bus_r[132:128];
+assign es_result = es_to_ms1_bus_r[127:96];
+
+assign ms1_to_es_bus = {reg_we,
+                        dest,
+                        es_result   
+                       };
+
+always @(posedge clk) begin
+    if (reset) begin
+        es_to_ms1_bus_r <= 0;
+    end
+    else if (flush) begin
+        es_to_ms1_bus_r <= 0;
+    end
+    else if(stall[3] & (!stall[4])) begin
+        es_to_ms1_bus_r <= 0;
+    end
+    else if(!stall[3]) begin
+        es_to_ms1_bus_r <= es_to_ms1_bus;
+    end
+end
+
+endmodule
+
+
+
+module mem2_stage
 #(
     parameter ES_TO_MS_BUS_WD = 271,
     parameter MS_TO_ES_BUS_WD = 38,
@@ -20,16 +72,17 @@ module mem_stage
 
     input  [ 7:0] ext_int,
 
-    input  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,
+    input  [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
     output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
-    output [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus,
+    output [MS_TO_WS_BUS_WD -1:0] ms2_to_ws_bus,
 
     input  [31:0] data_sram_rdata
 );
 
-    reg  [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus_r;
+    reg  [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus_r;
     reg  [31:0] data_sram_rdata_r;
-    reg  [31:0] csr_rdata_r;
+    reg  [31:0] data_sram_rdata_buffer;
+    reg  [31:0] csr_rdata_buffer;
     reg         stall_flag;
 
     wire [63:0] csr_vec;
@@ -77,63 +130,61 @@ module mem_stage
             src1     ,//95 :64
             ms_pc    ,//63 :32
             inst      //31 :0
-           } = es_to_ms_bus_r;
+           } = ms1_to_ms2_bus_r;
 
     assign ms_to_es_bus = {reg_we,
                            dest,
-                           es_result
+                           ms_final_result//es_result
                           };
 
-    assign ms_to_ws_bus = {reg_we           ,//101:101
-                           dest             ,//100:96
-                           ms_final_result  ,//95 :64
-                           ms_pc            ,//63 :32
-                           inst              //31 :0
-                          };
+    assign ms2_to_ws_bus = {reg_we           ,//101:101
+                            dest             ,//100:96
+                            ms_final_result  ,//95 :64
+                            ms_pc            ,//63 :32
+                            inst              //31 :0
+                           };
 
-    always @ (posedge clk) begin
+    always @(posedge clk) begin
         if (reset) begin
-            es_to_ms_bus_r <= 0;
+            ms1_to_ms2_bus_r  <= 0;
+            data_sram_rdata_r <= 0;
+            csr_rdata_buffer  <= 0;
+            stall_flag        <= 0;
         end
         else if (flush) begin
-            es_to_ms_bus_r <= 0;
-        end
-        else if (stall[3]&(!stall[4])) begin
-            es_to_ms_bus_r <= 0;
-        end
-        else if (!stall[3]) begin
-            es_to_ms_bus_r <= es_to_ms_bus;
-        end
-    end
-    
-    always @ (posedge clk) begin
-        if (reset) begin
+            ms1_to_ms2_bus_r  <= 0;
             data_sram_rdata_r <= 0;
-            csr_rdata_r <= 0;
-            stall_flag <= 1'b0;
+            csr_rdata_buffer  <= 0;
+            stall_flag        <= 0;
         end
-        else if (flush) begin
+        else if (stall[3] & (!stall[4])) begin
+            ms1_to_ms2_bus_r  <= 0;
             data_sram_rdata_r <= 0;
-            csr_rdata_r <= 0;
-            stall_flag <= 1'b0;
+            csr_rdata_buffer  <= 0;
+            stall_flag        <= 0;
         end
-        else if (!stall[3]) begin
+        else if ((!stall[3]) & stall_flag) begin
+            ms1_to_ms2_bus_r  <= ms1_to_ms2_bus;
+            data_sram_rdata_r <= data_sram_rdata_buffer;
+            csr_rdata_buffer  <= 0;
+            stall_flag        <= 0;
+        end
+        else if ((!stall[3]) & (!stall_flag)) begin
+            ms1_to_ms2_bus_r  <= ms1_to_ms2_bus;
             data_sram_rdata_r <= data_sram_rdata;
-            csr_rdata_r <= csr_rdata;
-            stall_flag <= 1'b0;
+            csr_rdata_buffer  <= 0;
+            stall_flag        <= 0;
         end
-        else if (stall_flag) begin
-            
+        else if(!stall_flag) begin
+            data_sram_rdata_buffer <= data_sram_rdata;
+            csr_rdata_buffer       <= csr_rdata;
+            stall_flag             <= 1'b1;
         end
-        else if (stall[3]&stall[4])begin
-            data_sram_rdata_r <= data_sram_rdata;
-            csr_rdata_r <= csr_rdata;
-            stall_flag <= 1'b1;
-        end
+        
     end
 
-    assign data_temp  = stall_flag ? data_sram_rdata_r : data_sram_rdata;
-    assign csr_result = stall_flag ? csr_rdata_r : csr_rdata;
+    assign data_temp  = data_sram_rdata_r;
+    assign csr_result = stall_flag ? csr_rdata_buffer : csr_rdata;
 
     assign {inst_ld_b,
             inst_ld_h,

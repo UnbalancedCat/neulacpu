@@ -2,8 +2,8 @@
 module pip_ctrl(
     input  reset,
     input  except_en,
-    input  stallreq_fs_for_cache,
-    input  stallreq_es_for_cache,
+    //input  stallreq_fs_for_cache,
+    //input  stallreq_es_for_cache,
     input  stallreq_ds,
     input  stallreq_es,
     input  stallreq_axi,
@@ -30,15 +30,16 @@ module pip_ctrl(
             flush = 1;
             stall = `StallBus'b0;
         end
-        //id段发生暂停，此时id及之前暂停
-        else if (stallreq_ds) begin
-            flush = 0;
-            stall = `StallBus'b000111;
-        end
         else if (stallreq_es) begin
             flush = 0;
             stall = `StallBus'b111111;
         end
+        //id段发生暂停，此时id及之前暂�?
+        else if (stallreq_ds) begin
+            flush = 0;
+            stall = `StallBus'b000111;
+        end
+        
         // else if(stallreq_fs_for_cache) begin
         //     flush = 0;
         //     stall = `StallBus'b000011;

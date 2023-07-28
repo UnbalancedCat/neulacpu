@@ -10,7 +10,7 @@ module wb_stage
     input        flush,
     input  [5:0] stall,
 
-    input  [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus,
+    input  [MS_TO_WS_BUS_WD -1:0] ms2_to_ws_bus,
     output [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
     output [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
 
@@ -19,7 +19,7 @@ module wb_stage
     output [ 4:0] debug_wb_rf_wnum,
     output [31:0] debug_wb_rf_wdata
 );
-    reg  [MS_TO_WS_BUS_WD -1:0] ms_to_ws_bus_r;
+    reg  [MS_TO_WS_BUS_WD -1:0] ms2_to_ws_bus_r;
 
     wire        reg_we;
     wire [ 4:0] dest;
@@ -32,7 +32,7 @@ module wb_stage
             ms_final_result  ,//95 :64
             ws_pc            ,//63 :32
             inst              //31 :0
-           } = ms_to_ws_bus_r;
+           } = ms2_to_ws_bus_r;
 
     assign ws_to_rf_bus = {reg_we,
                            dest,
@@ -46,16 +46,16 @@ module wb_stage
 
     always @ (posedge clk) begin
         if (reset) begin
-            ms_to_ws_bus_r <= 0;
+            ms2_to_ws_bus_r <= 0;
         end
         else if (flush) begin
-            ms_to_ws_bus_r <= 0;
+            ms2_to_ws_bus_r <= 0;
         end
         else if (stall[4]&(!stall[5])) begin
-            ms_to_ws_bus_r <= 0;
+            ms2_to_ws_bus_r <= 0;
         end
         else if (!stall[4]) begin
-            ms_to_ws_bus_r <= ms_to_ws_bus;
+            ms2_to_ws_bus_r <= ms2_to_ws_bus;
         end
     end
 

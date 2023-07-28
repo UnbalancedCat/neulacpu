@@ -1,6 +1,6 @@
 module id_stage
 #(
-    parameter FS_TO_DS_BUS_WD = 65,
+    parameter FS_TO_DS_BUS_WD = 34,
     parameter DS_TO_ES_BUS_WD = 301,
     parameter WS_TO_RF_BUS_WD = 38
 )
@@ -14,19 +14,20 @@ module id_stage
 
     output        stallreq_ds,
 
-    input         pc_valid,   
+    //input         pc_valid,   
     input  [31:0] inst_sram_rdata,
     input  [ 1:0] csr_plv,
     input         csr_has_int,
 
-    input  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus,
+    input  [FS_TO_DS_BUS_WD -1:0] fs2_to_ds_bus,
     input  [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
     output [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus
 );
-    reg  [FS_TO_DS_BUS_WD -1:0] fs_to_ds_bus_r;
-    reg         pc_valid_r;
+    reg  [FS_TO_DS_BUS_WD -1:0] fs2_to_ds_bus_r;
+    //reg         pc_valid_r;
 
-    reg  [31:0] inst_r;
+    reg  [31:0] inst_sram_rdata_buffer;
+    reg  [31:0] inst_sram_rdata_r;
     reg         stall_flag;
 
     reg  [ 6:0] es_load_buffer;
@@ -34,6 +35,8 @@ module id_stage
 
     wire        br_flush;
     wire [31:0] ds_pc;
+
+    wire        pc_valid;
 
     wire        src1_is_pc;
     wire        src2_is_imm;
@@ -80,16 +83,15 @@ module id_stage
     wire        stallreq_csr;
 
     wire        excp_adef;
-    wire [31:0] csr_vec_h;
     wire [31:0] csr_vec_l;
     wire [63:0] csr_vec;
 
-    assign {csr_vec_h,
+    assign {pc_valid,
             excp_adef,
             ds_pc
-           } = fs_to_ds_bus_r;
+           } = fs2_to_ds_bus_r;
 
-    assign csr_vec = {csr_vec_h, csr_vec_l};
+    assign csr_vec = {32'b0, csr_vec_l};
 
     assign br_flush = br_taken;
 
@@ -100,83 +102,75 @@ module id_stage
 
     
 
-    assign ds_to_es_bus = {csr_vec          & {64{pc_valid_r}}  ,//300:237
-                           csr_op                               ,//236:230
-                           csr_wdata_sel                        ,//229:229
-                           csr_addr                             ,//228:215
-                           csr_we                               ,//214:214
-                           alu_op                               ,//213:202
-                           mul_div_op       & { 4{pc_valid_r}}  ,//198:189
-                           mul_div_sign     &     pc_valid_r    ,//197:197
-                           branch_op        & { 9{pc_valid_r}}  ,//196:188
-                           store_op         & { 3{pc_valid_r}}  ,//187:185
-                           load_op          & { 6{pc_valid_r}}  ,//184:179
-                           reg_we           &     pc_valid_r    ,//178:178
-                           src1_is_pc                           ,//177:177
-                           src2_is_imm                          ,//176:176
-                           src2_is_4                            ,//175:175
-                           rj                                   ,//174:170
-                           rkd                                  ,//169:165
-                           rj_value                             ,//164:133
-                           rkd_value                            ,//132:101
-                           dest                                 ,//100:96
-                           imm                                  ,//95 :64
-                           ds_pc                                ,//63 :32
-                           inst             & {32{pc_valid_r}}   //31 :0
+    assign ds_to_es_bus = {csr_vec          & {64{pc_valid}}  ,//300:237
+                           csr_op                             ,//236:230
+                           csr_wdata_sel                      ,//229:229
+                           csr_addr                           ,//228:215
+                           csr_we                             ,//214:214
+                           alu_op                             ,//213:202
+                           mul_div_op       & { 4{pc_valid}}  ,//198:189
+                           mul_div_sign     &     pc_valid    ,//197:197
+                           branch_op        & { 9{pc_valid}}  ,//196:188
+                           store_op         & { 3{pc_valid}}  ,//187:185
+                           load_op          & { 6{pc_valid}}  ,//184:179
+                           reg_we           &     pc_valid    ,//178:178
+                           src1_is_pc                         ,//177:177
+                           src2_is_imm                        ,//176:176
+                           src2_is_4                          ,//175:175
+                           rj                                 ,//174:170
+                           rkd                                ,//169:165
+                           rj_value                           ,//164:133
+                           rkd_value                          ,//132:101
+                           dest                               ,//100:96
+                           imm                                ,//95 :64
+                           ds_pc                              ,//63 :32
+                           inst             & {32{pc_valid}}   //31 :0
                           };
 
-    always @ (posedge clk)begin
+
+    always @(posedge clk) begin
         if (reset) begin
-            pc_valid_r     <= 1'b0;
-            fs_to_ds_bus_r <= 0;
+            fs2_to_ds_bus_r     <= 0;
+            inst_sram_rdata_r   <= 0;
+            stall_flag          <= 0;
         end
         else if (flush) begin
-            pc_valid_r     <= 1'b0;
-            fs_to_ds_bus_r <= 0;
+            fs2_to_ds_bus_r     <= 0;
+            inst_sram_rdata_r   <= 0;
+            stall_flag          <= 0;
         end
-        //nop, ID stall and EX not stall
-        else if (stall[1] & (!stall[2]))begin
-            pc_valid_r     <= 1'b0;
-            fs_to_ds_bus_r <= 0;
+        else if ((!stall[1]) & (!stall[2]) & br_flush) begin
+            fs2_to_ds_bus_r     <= 0;
+            inst_sram_rdata_r   <= 0;
+            stall_flag          <= 0;
         end
-        //nop, ID not stall but branch
-        else if (!stall[1] & br_flush) begin
-            pc_valid_r     <= 1'b0;
-            fs_to_ds_bus_r <= 0;
+        else if (stall[1] & (!stall[2])) begin
+            fs2_to_ds_bus_r     <= 0;
+            inst_sram_rdata_r   <= 0;
+            stall_flag          <= 0;
         end
-        // ID not stall so go on
-        else if (!stall[1]) begin
-            pc_valid_r <= pc_valid;
-            fs_to_ds_bus_r <= fs_to_ds_bus;
+        else if ((!stall[1]) & stall_flag) begin
+            fs2_to_ds_bus_r     <= fs2_to_ds_bus;
+            inst_sram_rdata_r   <= inst_sram_rdata_buffer;
+            stall_flag          <= 0;
+        end
+        else if ((!stall[1]) & (!stall_flag)) begin
+            fs2_to_ds_bus_r     <= fs2_to_ds_bus;
+            inst_sram_rdata_r   <= inst_sram_rdata;
+            stall_flag          <= 0;
+        end
+        else if ((!stall_flag) & br_flush) begin
+            inst_sram_rdata_buffer  <= 0;
+            stall_flag              <= 1'b1;
+        end
+        else if (!stall_flag) begin
+            inst_sram_rdata_buffer  <= inst_sram_rdata;
+            stall_flag              <= 1'b1;
         end
     end
 
-    always @ (posedge clk) begin
-        if (reset) begin
-            inst_r <= 64'b0;
-            stall_flag <= 1'b0;
-        end
-        else if (flush) begin
-            inst_r <= 64'b0;
-            stall_flag <= 1'b0;
-        end
-        //if not stall, get inst from inst_sram
-        else if (!stall[1]) begin
-            inst_r <= inst_sram_rdata;
-            stall_flag <= 1'b0;
-        end
-        else if (stall_flag) begin
-
-        end
-        //if stall and id stall, get inst from inst_ram ?
-        else if (stall[1]&stall[2]) begin
-            inst_r <= inst_sram_rdata;
-            stall_flag <= 1'b1;
-        end
-    end
-
-    assign next_inst = stall_flag ? inst_r : inst_sram_rdata;
-    assign inst = ~pc_valid_r ? 32'b0 : next_inst;
+    assign next_inst = inst_sram_rdata_r;
+    assign inst = !pc_valid ? 32'b0 : next_inst;
 
     inst_decoder u_inst_decoder(
         .inst           (inst           ),
@@ -250,8 +244,12 @@ module id_stage
            } = es_load_buffer;
     assign es_is_csr = es_csr_buffer;
     //ex段为load指令，且发生数据相关时，id段需要被暂停
-    assign stallreq_load = es_is_load & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
-    assign stallreq_csr  = es_is_csr  & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
-    assign stallreq_ds   = stallreq_load | stallreq_csr;
+    assign stallreq_load = es_is_load & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));    //TODO?
+    assign stallreq_csr  = es_is_csr & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
+
+    wire stallreq_forward;
+    assign stallreq_forward = es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));        // TODO!
+
+    assign stallreq_ds   = stallreq_load | stallreq_csr/* | stallreq_forward*/;
 
 endmodule

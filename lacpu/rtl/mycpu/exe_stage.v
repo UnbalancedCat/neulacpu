@@ -16,11 +16,14 @@ module exe_stage
     //output        stallreq_es_for_cache,
 
     input  [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus,    
-    output [ES_TO_MS_BUS_WD -1:0] es_to_ms_bus,    
-    input  [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,    
+    output [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus,
+
+    input  [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus,
+    input  [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus, 
     input  [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
 
     output [BR_BUS_WD       -1:0] br_bus,
+    input                         br_taken_buffer,
 
     output        data_sram_en,
     output [ 3:0] data_sram_we,
@@ -56,6 +59,9 @@ module exe_stage
     wire [31:0] es_pc;
     wire [31:0] inst;
 
+    wire        ms1_reg_we;
+    wire [ 4:0] ms1_dest;
+    wire [31:0] ms1_result;
     wire        ms_reg_we;
     wire [ 4:0] ms_dest;
     wire [31:0] ms_result;
@@ -111,6 +117,11 @@ module exe_stage
             inst              //31 :0
            } = ds_to_es_bus_r;
 
+    assign {ms1_reg_we,
+            ms1_dest,
+            ms1_result
+           } = ms1_to_es_bus;
+
     assign {ms_reg_we,
             ms_dest,
             ms_result
@@ -121,19 +132,19 @@ module exe_stage
             ws_result
            } = ws_to_es_bus;
 
-    assign es_to_ms_bus = {csr_vec  ,//270:207
-                           csr_bus  ,//206:143
-                           load_op  ,//142:137
-                           store_op ,//136:134
-                           reg_we   ,//133:133
-                           dest     ,//132:128
-                           es_result,//127:96
-                           src1     ,//95 :64
-                           es_pc    ,//63 :32
-                           inst      //31 :0
-                          };
+    assign es_to_ms1_bus = {csr_vec  ,//270:207
+                            csr_bus  ,//206:143
+                            load_op  ,//142:137
+                            store_op ,//136:134
+                            reg_we   ,//133:133
+                            dest     ,//132:128
+                            es_result,//127:96
+                            src1     ,//95 :64
+                            es_pc    ,//63 :32
+                            inst      //31 :0
+                           };
     
-    assign br_flush = br_taken & ~(csr_cancel|csr_cancel_reg);
+    assign br_flush = (br_taken & ~(csr_cancel|csr_cancel_reg))/* | br_taken_buffer*/;  // TODO!
 
     assign excp_adef = csr_vec[6];
 
@@ -158,12 +169,14 @@ module exe_stage
         end
     end
 
-    assign src1 = ms_reg_we & (ms_dest == rj ) & (rj  != 1'b0) ? ms_result :
-                  ws_reg_we & (ws_dest == rj ) & (rj  != 1'b0) ? ws_result :
-                                                                 rj_value;
-    assign src2 = ms_reg_we & (ms_dest == rkd) & (rkd != 1'b0) ? ms_result :
-                  ws_reg_we & (ws_dest == rkd) & (rkd != 1'b0) ? ws_result :
-                                                                 rkd_value;
+    assign src1 = ms1_reg_we & (ms1_dest == rj ) & (rj  != 1'b0) ? ms1_result :   // TODO!
+                  ms_reg_we  & (ms_dest  == rj ) & (rj  != 1'b0) ? ms_result  :
+                  ws_reg_we  & (ws_dest  == rj ) & (rj  != 1'b0) ? ws_result  :
+                                                                   rj_value;
+    assign src2 = ms1_reg_we & (ms1_dest == rkd) & (rkd != 1'b0) ? ms1_result :   // TODO!
+                  ms_reg_we  & (ms_dest  == rkd) & (rkd != 1'b0) ? ms_result  :
+                  ws_reg_we  & (ws_dest  == rkd) & (rkd != 1'b0) ? ws_result  :
+                                                                   rkd_value;
     
     assign alu_src1 = src1_is_pc ? es_pc :
                                    src1;
@@ -191,7 +204,7 @@ module exe_stage
     wire csr_cancel;
     reg  csr_cancel_reg;
     
-    assign csr_cancel = /*flush ? 1'b0 :*/ |csr_vec[31:0] | excp_adef;// TODO?
+    assign csr_cancel = |csr_vec[31:0] | excp_adef;
 
     always @ (posedge clk) begin
         if (reset) begin
@@ -254,31 +267,5 @@ module exe_stage
     assign csr_vec = {csr_vec_temp[63:8], excp_ale, csr_vec_temp[6:0]};
 
     assign stallreq_es = stallreq_for_mul_div;
-    
-    // always @(posedge clk) begin
-    //     if (reset) begin
-    //         stallreq_es_for_cache_r <= 1'b0;
-    //     end
-    //     else if (flush) begin
-    //         stallreq_es_for_cache_r <= 1'b0;
-    //     end
-    //     //nop, id stall and ex not stall
-    //     else if (stall[2] & (!stall[3])) begin
-    //         stallreq_es_for_cache_r <= 1'b0;
-    //     end
-    //     //nop, id not stall and br_bus[32]
-    //     else if (!stall[2] & br_flush) begin
-    //         stallreq_es_for_cache_r <= 1'b0;
-    //     end
-    //     // id not stall so can go on
-    //     else if (!stall[2] & (|load_op | |store_op)) begin
-    //         stallreq_es_for_cache_r <= 1'b1;
-    //     end
-    //     else begin
-    //         stallreq_es_for_cache_r <= 1'b0;
-    //     end
-    // end    
-    
-    // assign stallreq_es_for_cache = stallreq_es_for_cache_r;
 
 endmodule

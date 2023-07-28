@@ -90,8 +90,8 @@ module mycpu_top
     assign resetn = aresetn;
 
     // icache tag
-    wire        icache_cached;
-    wire        icache_uncached;
+    //wire        icache_cached;
+    //wire        icache_uncached;
     wire        icache_refresh;
     wire        icache_miss;
     wire [31:0] icache_raddr;
@@ -204,7 +204,7 @@ module mycpu_top
         .stallreq   (stallreq_uncache                ),
         .conf_en    (data_sram_en & ~dcache_cached   ),
         .conf_we    (data_sram_we                    ),
-        .conf_addr  (data_sram_addr_mmu              ), // _mmu ?
+        .conf_addr  (data_sram_addr_mmu              ),
         .conf_wdata (data_sram_wdata                 ),
         .conf_rdata (uncache_temp_rdata              ),
         .axi_en     (uncache_en                      ),

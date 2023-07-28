@@ -29,6 +29,8 @@ module mul_div_top(
     wire [31:0] b_locked;
     wire        mul_en_locked;
     wire        div_en_locked;
+    wire        sign_flag_locked;
+    wire        rem_flag_locked;
 
     assign mul_en = mul_div_op[0] | mul_div_op[1];
     assign div_en = mul_div_op[2] | mul_div_op[3];
@@ -43,12 +45,16 @@ module mul_div_top(
     .stall            (stall            ),
     .a                (src_a            ),
     .b                (src_b            ),
+    .sign_flag        (sign_flag        ),
+    .rem_flag         (a[31]            ),
     .mul_en           (mul_en           ),
     .div_en           (div_en           ),
     .stallreq_for_mul (stallreq_for_mul ),
     .stallreq_for_div (stallreq_for_div ),
     .a_locked         (a_locked         ),
     .b_locked         (b_locked         ),
+    .sign_flag_locked (sign_flag_locked ),
+    .rem_flag_locked  (rem_flag_locked  ),
     .mul_en_locked    (mul_en_locked    ),
     .div_en_locked    (div_en_locked    )
     );
@@ -78,10 +84,10 @@ module mul_div_top(
     );
 
     assign stallreq = stallreq_for_mul | stallreq_for_div;
-    assign mul_div_result = mul_div_op[0] ? (mul_div_sign & (a[31] ^ b[31]) & |result_l ) ? {               ~result_l[31:0]  + 1'b1} : result_l  :
-                            mul_div_op[1] ? (mul_div_sign & (a[31] ^ b[31]) & |result_h ) ? {a[31] ^ b[31], ~result_h[30:0]        } : result_h  :
-                            mul_div_op[2] ? (mul_div_sign & (a[31] ^ b[31]) & |quotient ) ? {a[31] ^ b[31], ~quotient[30:0]  + 1'b1} : quotient  :
-                            mul_div_op[3] ? (mul_div_sign &          a[31]  & |remainder) ? {a[31]        , ~remainder[30:0] + 1'b1} : remainder :
+    assign mul_div_result = mul_div_op[0] ? (mul_div_sign & sign_flag_locked & |result_l ) ? {                  ~result_l[31:0]  + 1'b1} : result_l  :
+                            mul_div_op[1] ? (mul_div_sign & sign_flag_locked & |result_h ) ? {sign_flag_locked, ~result_h[30:0]        } : result_h  :
+                            mul_div_op[2] ? (mul_div_sign & sign_flag_locked & |quotient ) ? {sign_flag_locked, ~quotient[30:0]  + 1'b1} : quotient  :
+                            mul_div_op[3] ? (mul_div_sign & rem_flag_locked  & |remainder) ? {rem_flag_locked , ~remainder[30:0] + 1'b1} : remainder :
                                             32'b0;
     
 endmodule
