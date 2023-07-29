@@ -2,7 +2,7 @@ module exe_stage
 #(
     parameter BR_BUS_WD = 33,
     parameter DS_TO_ES_BUS_WD = 301,
-    parameter ES_TO_MS_BUS_WD = 271,
+    parameter ES_TO_DT_BUS_WD = 340,
     parameter MS_TO_ES_BUS_WD = 38,
     parameter WS_TO_ES_BUS_WD = 38
 )
@@ -16,19 +16,24 @@ module exe_stage
     //output        stallreq_es_for_cache,
 
     input  [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus,    
-    output [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus,
+    output [ES_TO_DT_BUS_WD -1:0] es_to_dts_bus,
 
-    input  [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus,
-    input  [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus, 
-    input  [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
+    input         src1_is_forward,    
+    input         src2_is_forward,    
+    input  [31:0] src1_forward_result,
+    input  [31:0] src2_forward_result,
+    //input  [MS_TO_ES_BUS_WD -1:0] dts_to_es_bus,
+    //input  [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus,
+    //input  [MS_TO_ES_BUS_WD -1:0] ms2_to_es_bus, 
+    //input  [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
 
     output [BR_BUS_WD       -1:0] br_bus,
-    input                         br_taken_buffer,
+    input                         br_taken_buffer
 
-    output        data_sram_en,
-    output [ 3:0] data_sram_we,
-    output [31:0] data_sram_addr,
-    output [31:0] data_sram_wdata
+    // output        data_sram_en,
+    // output [ 3:0] data_sram_we,
+    // output [31:0] data_sram_addr,
+    // output [31:0] data_sram_wdata
 );
 
     reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
@@ -59,12 +64,15 @@ module exe_stage
     wire [31:0] es_pc;
     wire [31:0] inst;
 
+    wire        dts_reg_we;
+    wire [ 4:0] dts_dest;
+    wire [31:0] dts_result;
     wire        ms1_reg_we;
     wire [ 4:0] ms1_dest;
     wire [31:0] ms1_result;
-    wire        ms_reg_we;
-    wire [ 4:0] ms_dest;
-    wire [31:0] ms_result;
+    wire        ms2_reg_we;
+    wire [ 4:0] ms2_dest;
+    wire [31:0] ms2_result;
     wire        ws_reg_we;
     wire [ 4:0] ws_dest;
     wire [31:0] ws_result;
@@ -92,6 +100,11 @@ module exe_stage
     wire        excp_adef;  
     wire        excp_ale;
 
+    wire        data_sram_en;
+    wire [ 3:0] data_sram_we;
+    wire [31:0] data_sram_addr;
+    wire [31:0] data_sram_wdata;
+
     assign {csr_vec_temp     ,//300:237
             csr_op           ,//236:230
             csr_wdata_sel    ,//229:229
@@ -117,34 +130,43 @@ module exe_stage
             inst              //31 :0
            } = ds_to_es_bus_r;
 
-    assign {ms1_reg_we,
-            ms1_dest,
-            ms1_result
-           } = ms1_to_es_bus;
+    // assign {dts_reg_we,
+    //         dts_dest,
+    //         dts_result
+    //        } = dts_to_es_bus;
 
-    assign {ms_reg_we,
-            ms_dest,
-            ms_result
-           } = ms_to_es_bus;
+    // assign {ms1_reg_we,
+    //         ms1_dest,
+    //         ms1_result
+    //        } = ms1_to_es_bus;
 
-    assign {ws_reg_we,
-            ws_dest,
-            ws_result
-           } = ws_to_es_bus;
+    // assign {ms2_reg_we,
+    //         ms2_dest,
+    //         ms2_result
+    //        } = ms2_to_es_bus;
 
-    assign es_to_ms1_bus = {csr_vec  ,//270:207
-                            csr_bus  ,//206:143
-                            load_op  ,//142:137
-                            store_op ,//136:134
-                            reg_we   ,//133:133
-                            dest     ,//132:128
-                            es_result,//127:96
-                            src1     ,//95 :64
-                            es_pc    ,//63 :32
-                            inst      //31 :0
+    // assign {ws_reg_we,
+    //         ws_dest,
+    //         ws_result
+    //        } = ws_to_es_bus;
+
+    assign es_to_dts_bus = {data_sram_en    ,//339:339
+                            data_sram_we    ,//338:335
+                            data_sram_addr  ,//334:303
+                            data_sram_wdata ,//302:271
+                            csr_vec         ,//270:207
+                            csr_bus         ,//206:143
+                            load_op         ,//142:137
+                            store_op        ,//136:134
+                            reg_we          ,//133:133
+                            dest            ,//132:128
+                            es_result       ,//127:96
+                            src1            ,//95 :64
+                            es_pc           ,//63 :32
+                            inst             //31 :0
                            };
     
-    assign br_flush = (br_taken & ~(csr_cancel|csr_cancel_reg))/* | br_taken_buffer*/;  // TODO!
+    assign br_flush = (br_taken & ~(csr_cancel|csr_cancel_reg)) | br_taken_buffer;  // TODO!
 
     assign excp_adef = csr_vec[6];
 
@@ -156,11 +178,11 @@ module exe_stage
             ds_to_es_bus_r <= 0;
         end
         //nop, id stall and ex not stall
-        else if (stall[2]&(!stall[3])) begin
+        else if (stall[2] & (!stall[3])) begin
             ds_to_es_bus_r <= 0;
         end
         //nop, id not stall and br_bus[32]
-        else if (!stall[2]&br_flush) begin
+        else if (!stall[2] & br_flush) begin
             ds_to_es_bus_r <= 0;
         end
         // id not stall so can go on
@@ -169,13 +191,17 @@ module exe_stage
         end
     end
 
-    assign src1 = ms1_reg_we & (ms1_dest == rj ) & (rj  != 1'b0) ? ms1_result :   // TODO!
-                  ms_reg_we  & (ms_dest  == rj ) & (rj  != 1'b0) ? ms_result  :
-                  ws_reg_we  & (ws_dest  == rj ) & (rj  != 1'b0) ? ws_result  :
+    assign src1 = //dts_reg_we & (dts_dest == rj ) & (rj  != 1'b0) ? dts_result :   // TODO!
+                  //ms1_reg_we & (ms1_dest == rj ) & (rj  != 1'b0) ? ms1_result :   // TODO!
+                  //ms2_reg_we & (ms2_dest == rj ) & (rj  != 1'b0) ? ms2_result :
+                  //ws_reg_we  & (ws_dest  == rj ) & (rj  != 1'b0) ? ws_result  :
+                  src1_is_forward                                ? src1_forward_result :
                                                                    rj_value;
-    assign src2 = ms1_reg_we & (ms1_dest == rkd) & (rkd != 1'b0) ? ms1_result :   // TODO!
-                  ms_reg_we  & (ms_dest  == rkd) & (rkd != 1'b0) ? ms_result  :
-                  ws_reg_we  & (ws_dest  == rkd) & (rkd != 1'b0) ? ws_result  :
+    assign src2 = //dts_reg_we & (dts_dest == rkd) & (rkd != 1'b0) ? dts_result :   // TODO!
+                  //ms1_reg_we & (ms1_dest == rkd) & (rkd != 1'b0) ? ms1_result :   // TODO!
+                  //ms2_reg_we & (ms2_dest == rkd) & (rkd != 1'b0) ? ms2_result :
+                  //ws_reg_we  & (ws_dest  == rkd) & (rkd != 1'b0) ? ws_result  :
+                  src2_is_forward                                ? src2_forward_result :
                                                                    rkd_value;
     
     assign alu_src1 = src1_is_pc ? es_pc :
@@ -257,11 +283,12 @@ module exe_stage
                                                 alu_result;
     
     assign csr_wdata = src2;
-    assign csr_bus = {csr_we,
-                      csr_wdata_sel,
-                      csr_op,
-                      csr_addr,
-                      csr_wdata
+    assign csr_bus = {9'b0          ,//63:55
+                      csr_we        ,//54:54
+                      csr_wdata_sel ,//53:53
+                      csr_op        ,//52:46
+                      csr_addr      ,//45:32
+                      csr_wdata      //31:0
                      };
 
     assign csr_vec = {csr_vec_temp[63:8], excp_ale, csr_vec_temp[6:0]};

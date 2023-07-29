@@ -1,6 +1,6 @@
 module mem1_stage
 #(
-    parameter ES_TO_MS_BUS_WD = 271,
+    parameter DT_TO_MS_BUS_WD = 271,
     parameter MS_TO_ES_BUS_WD = 38
 )
 (
@@ -9,22 +9,22 @@ module mem1_stage
     input         flush,
     input  [ 5:0] stall,
 
-    input  [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus,
-    output [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
+    input  [DT_TO_MS_BUS_WD -1:0] dts_to_ms1_bus,
+    output [DT_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
     output [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus
 );
 
-reg  [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus_r;
+reg  [DT_TO_MS_BUS_WD -1:0] dts_to_ms1_bus_r;
 
 wire        reg_we;
 wire [ 4:0] dest;
 wire [31:0] es_result;
 
-assign ms1_to_ms2_bus = es_to_ms1_bus_r;
+assign ms1_to_ms2_bus = dts_to_ms1_bus_r;
 
-assign reg_we    = es_to_ms1_bus_r[133:133];
-assign dest      = es_to_ms1_bus_r[132:128];
-assign es_result = es_to_ms1_bus_r[127:96];
+assign reg_we    = dts_to_ms1_bus_r[133:133];
+assign dest      = dts_to_ms1_bus_r[132:128];
+assign es_result = dts_to_ms1_bus_r[127:96];
 
 assign ms1_to_es_bus = {reg_we,
                         dest,
@@ -33,16 +33,16 @@ assign ms1_to_es_bus = {reg_we,
 
 always @(posedge clk) begin
     if (reset) begin
-        es_to_ms1_bus_r <= 0;
+        dts_to_ms1_bus_r <= 0;
     end
     else if (flush) begin
-        es_to_ms1_bus_r <= 0;
+        dts_to_ms1_bus_r <= 0;
     end
     else if(stall[3] & (!stall[4])) begin
-        es_to_ms1_bus_r <= 0;
+        dts_to_ms1_bus_r <= 0;
     end
     else if(!stall[3]) begin
-        es_to_ms1_bus_r <= es_to_ms1_bus;
+        dts_to_ms1_bus_r <= dts_to_ms1_bus;
     end
 end
 
@@ -52,9 +52,9 @@ endmodule
 
 module mem2_stage
 #(
-    parameter ES_TO_MS_BUS_WD = 271,
+    parameter DT_TO_MS_BUS_WD = 271,
     parameter MS_TO_ES_BUS_WD = 38,
-    parameter MS_TO_WS_BUS_WD = 102
+    parameter MS_TO_WS_BUS_WD = 172
 )
 (
     input         clk,
@@ -72,14 +72,14 @@ module mem2_stage
 
     input  [ 7:0] ext_int,
 
-    input  [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
-    output [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus,
+    input  [DT_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus,
+    output [MS_TO_ES_BUS_WD -1:0] ms2_to_es_bus,
     output [MS_TO_WS_BUS_WD -1:0] ms2_to_ws_bus,
 
     input  [31:0] data_sram_rdata
 );
 
-    reg  [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus_r;
+    reg  [DT_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus_r;
     reg  [31:0] data_sram_rdata_r;
     reg  [31:0] data_sram_rdata_buffer;
     reg  [31:0] csr_rdata_buffer;
@@ -132,12 +132,14 @@ module mem2_stage
             inst      //31 :0
            } = ms1_to_ms2_bus_r;
 
-    assign ms_to_es_bus = {reg_we,
-                           dest,
-                           ms_final_result//es_result
-                          };
+    assign ms2_to_es_bus = {reg_we,
+                            dest,
+                            ms_final_result//es_result
+                           };
 
-    assign ms2_to_ws_bus = {reg_we           ,//101:101
+    assign ms2_to_ws_bus = {csr_bus          ,//171:108
+                            load_op          ,//107:102
+                            reg_we           ,//101:101
                             dest             ,//100:96
                             ms_final_result  ,//95 :64
                             ms_pc            ,//63 :32

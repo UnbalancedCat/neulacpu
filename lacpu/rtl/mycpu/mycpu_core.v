@@ -4,8 +4,9 @@ module mycpu_core
 #(
     parameter FS_TO_DS_BUS_WD = 34,
     parameter DS_TO_ES_BUS_WD = 301,
-    parameter ES_TO_MS_BUS_WD = 271,
-    parameter MS_TO_WS_BUS_WD = 102,
+    parameter ES_TO_DT_BUS_WD = 340,
+    parameter DT_TO_MS_BUS_WD = 271,
+    parameter MS_TO_WS_BUS_WD = 172,
     parameter WS_TO_RF_BUS_WD = 38,
 
     parameter MS_TO_ES_BUS_WD = 38,
@@ -50,17 +51,25 @@ module mycpu_core
     wire [FS_TO_DS_BUS_WD -1:0] fs1_to_fs2_bus;
     wire [FS_TO_DS_BUS_WD -1:0] fs2_to_ds_bus;
     wire [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus;
-    wire [ES_TO_MS_BUS_WD -1:0] es_to_ms1_bus;
-    wire [ES_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus;
+    wire [ES_TO_DT_BUS_WD -1:0] es_to_dts_bus;
+    wire [DT_TO_MS_BUS_WD -1:0] dts_to_ms1_bus;
+    wire [DT_TO_MS_BUS_WD -1:0] ms1_to_ms2_bus;
     wire [MS_TO_WS_BUS_WD -1:0] ms2_to_ws_bus;
     wire [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus;
 
-    wire [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus;
-    wire [MS_TO_ES_BUS_WD -1:0] ms_to_es_bus;
-    wire [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus;
+    //wire [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus;
+    //wire [MS_TO_ES_BUS_WD -1:0] ms2_to_es_bus;
+    //wire [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus;
 
     wire [BR_BUS_WD       -1:0] br_bus;
     wire [BR_BUS_WD       -1:0] br_bus_real;
+
+    wire        src1_is_forward;
+    wire        src2_is_forward;    
+    wire [31:0] src1_forward_result;
+    wire [31:0] src2_forward_result;
+
+    wire        stallreq_forward;          
 
     wire        flush;
     wire        stallreq_es;
@@ -97,7 +106,7 @@ module mycpu_core
     assign br_target   =  br_bus[32]      ? br_bus[31:0]     : 
                           br_taken_buffer ? br_target_buffer :
                                             32'b0;
-    assign br_bus_real = {br_taken, br_target};
+    assign br_bus_real = {br_taken, br_target};        // TODO!
     
 
     if1_stage if1_stage(
@@ -148,14 +157,32 @@ module mycpu_core
         .stallreq_es     (stallreq_es     ),
 
         .ds_to_es_bus    (ds_to_es_bus    ),    
-        .es_to_ms1_bus   (es_to_ms1_bus   ),   
+        .es_to_dts_bus   (es_to_dts_bus   ),
 
-        .ms1_to_es_bus   (ms1_to_es_bus   ), 
-        .ms_to_es_bus    (ms_to_es_bus    ),    
-        .ws_to_es_bus    (ws_to_es_bus    ),
+        .src1_is_forward     (src1_is_forward    ),
+        .src2_is_forward     (src2_is_forward    ),
+        .src1_forward_result (src1_forward_result),
+        .src2_forward_result (src2_forward_result),
+
+        //.dts_to_es_bus   (dts_to_es_bus   ),
+        //.ms1_to_es_bus   (ms1_to_es_bus   ), 
+        //.ms2_to_es_bus   (ms2_to_es_bus   ),    
+        //.ws_to_es_bus    (ws_to_es_bus    ),
 
         .br_bus          (br_bus          ),
-        .br_taken_buffer (br_taken_buffer ),
+        .br_taken_buffer (br_taken_buffer )
+    );
+
+    dt dt(
+        .clk             (clk             ),
+        .reset           (reset           ),
+        .flush           (flush           ),
+        .stall           (stall           ),
+
+        .es_to_dts_bus   (es_to_dts_bus   ),
+        .dts_to_ms1_bus  (dts_to_ms1_bus  ),
+
+        //.dts_to_es_bus   (dts_to_es_bus   ),
 
         .data_sram_en    (data_sram_en    ),
         .data_sram_we    (data_sram_we    ),
@@ -169,10 +196,10 @@ module mycpu_core
         .flush           (flush           ),
         .stall           (stall           ),
 
-        .es_to_ms1_bus   (es_to_ms1_bus   ),
-        .ms1_to_ms2_bus  (ms1_to_ms2_bus  ),
+        .dts_to_ms1_bus  (dts_to_ms1_bus  ),
+        .ms1_to_ms2_bus  (ms1_to_ms2_bus  )
 
-        .ms1_to_es_bus   (ms1_to_es_bus   )
+        //.ms1_to_es_bus   (ms1_to_es_bus   )
     );
 
 
@@ -189,7 +216,7 @@ module mycpu_core
         .ext_int         (ext_int         ),
 
         .ms1_to_ms2_bus  (ms1_to_ms2_bus  ),
-        .ms_to_es_bus    (ms_to_es_bus    ),
+        //.ms2_to_es_bus   (ms2_to_es_bus   ),
         .ms2_to_ws_bus   (ms2_to_ws_bus   ),
 
         .data_sram_rdata (data_sram_rdata )
@@ -211,13 +238,50 @@ module mycpu_core
         .debug_wb_rf_wdata (debug_wb_rf_wdata)
     );
 
+    forward forward(
+        .clk                 (clk  ),
+        .reset               (reset),
+        .flush               (flush),
+        .stall               (stall),
+ 
+        .rj                  (ds_to_es_bus[174:170] ),
+        .rkd                 (ds_to_es_bus[169:165] ),
+
+        .es_reg_we           (es_to_dts_bus[133]     ),
+        .es_dest             (es_to_dts_bus[132:128] ),
+        .es_result           (es_to_dts_bus[127:96 ] ),
+        .es_ctrl             ({(|es_to_dts_bus[142:137] ), (|es_to_dts_bus[195:189] )}),
+
+        .dts_reg_we          (dts_to_ms1_bus[133]    ),
+        .dts_dest            (dts_to_ms1_bus[132:128]),
+        .dts_result          (dts_to_ms1_bus[127:96 ]),
+        .dts_ctrl            ({(|dts_to_ms1_bus[142:137]), (|dts_to_ms1_bus[195:189])}),
+
+        .ms1_reg_we          (ms1_to_ms2_bus[133]    ),
+        .ms1_dest            (ms1_to_ms2_bus[132:128]),
+        .ms1_result          (ms1_to_ms2_bus[127:96 ]),
+        .ms1_ctrl            ({(|ms1_to_ms2_bus[142:137]), (|ms1_to_ms2_bus[195:189])}),
+
+        .ms2_reg_we          (ms2_to_ws_bus[101]     ),
+        .ms2_dest            (ms2_to_ws_bus[100:96] ),
+        .ms2_result          (ms2_to_ws_bus[95 :64 ] ),
+        .ms2_ctrl            (2'b0),
+ 
+        .src1_is_forward     (src1_is_forward        ),
+        .src2_is_forward     (src2_is_forward        ),
+        .src1_forward_result (src1_forward_result    ),
+        .src2_forward_result (src2_forward_result    ),
+        .stallreq_forward    (stallreq_forward       )
+    );
+
+
     pip_ctrl pip_ctrl(
         .reset           (reset           ),
         .except_en       (except_en       ),
-        .stallreq_ds     (stallreq_ds     ),
+        .stallreq_ds     (stallreq_forward),
         .stallreq_es     (stallreq_es     ),
         .stallreq_axi    (stallreq_cache  ),
-        .stallreq_cache  (stallreq_cache  ),
+        //.stallreq_cache  (stallreq_cache  ),
         .flush           (flush           ),
         .stall           (stall           )
     );

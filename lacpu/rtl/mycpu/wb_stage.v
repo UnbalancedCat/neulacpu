@@ -1,6 +1,6 @@
 module wb_stage
 #(
-    parameter MS_TO_WS_BUS_WD = 102,
+    parameter MS_TO_WS_BUS_WD = 172,
     parameter WS_TO_RF_BUS_WD = 38,
     parameter WS_TO_ES_BUS_WD = 38
 )
@@ -32,7 +32,7 @@ module wb_stage
             ms_final_result  ,//95 :64
             ws_pc            ,//63 :32
             inst              //31 :0
-           } = ms2_to_ws_bus_r;
+           } =  ms2_to_ws_bus_r[101:0];
 
     assign ws_to_rf_bus = {reg_we,
                            dest,

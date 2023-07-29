@@ -34,7 +34,7 @@ module pip_ctrl(
             flush = 0;
             stall = `StallBus'b111111;
         end
-        //id段发生暂停，此时id及之前暂�?
+        //id段发生暂停，此时id及之前暂停
         else if (stallreq_ds) begin
             flush = 0;
             stall = `StallBus'b000111;
