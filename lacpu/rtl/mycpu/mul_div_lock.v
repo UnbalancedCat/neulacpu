@@ -67,7 +67,7 @@ module mul_div_lock (
 
             first_enable     <= 0;
         end
-        else if (!stallreq & (mul_en|div_en) & !first_enable & !stall[2]) begin
+        else if (!stallreq & (mul_en|div_en) & !first_enable & (!stall[2] | (stall[2] & (!stall[3])))) begin
             a_buffer         <= 0;
             b_buffer         <= 0;
             sign_flag_buffer <= 0;

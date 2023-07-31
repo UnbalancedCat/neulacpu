@@ -32,6 +32,16 @@ module mul_div_top(
     wire        sign_flag_locked;
     wire        rem_flag_locked;
 
+
+    //-------------------------  
+
+    wire [63:0] unsigned_prod;
+    wire [63:0] signed_prod;
+
+    assign unsigned_prod = a * b;
+    //assign signed_prod = $signed(a) * $signed(b);
+
+    //-------------------------
     assign mul_en = mul_div_op[0] | mul_div_op[1];
     assign div_en = mul_div_op[2] | mul_div_op[3];
 
@@ -64,19 +74,21 @@ module mul_div_top(
         .reset     (reset           ),
         .stallreq  (stallreq_for_mul),
         .in_valid  (mul_en_locked   ),
-        .out_valid (),
+        .out_valid (                ),
         .a         (a_locked        ),
         .b         (b_locked        ),
         .result_h  (result_h        ),
         .result_l  (result_l        )
     );
 
+
+
     div u_div(
         .clk       (clk             ),
         .reset     (reset           ),
         .stallreq  (stallreq_for_div),
         .in_valid  (div_en_locked   ),
-        .out_valid (),
+        .out_valid (                ),
         .a         (a_locked        ),
         .b         (b_locked        ),
         .quotient  (quotient        ),

@@ -1,7 +1,7 @@
 -- Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
--- Date        : Fri Jul 21 18:49:49 2023
+-- Date        : Mon Jul 31 07:02:57 2023
 -- Host        : BHKLaptop running 64-bit major release  (build 9200)
 -- Command     : write_vhdl -force -mode funcsim
 --               C:/Users/Unbal/Desktop/LoongArch/neulacpu/lacpu/rtl/xilinx_ip/data_sram_bank/data_bram_bank_sim_netlist.vhdl
@@ -21,7 +21,7 @@ entity data_bram_bank_blk_mem_gen_prim_wrapper is
     ena : in STD_LOGIC;
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 )
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 )
   );
   attribute ORIG_REF_NAME : string;
   attribute ORIG_REF_NAME of data_bram_bank_blk_mem_gen_prim_wrapper : entity is "blk_mem_gen_prim_wrapper";
@@ -164,11 +164,9 @@ begin
       RSTRAMB => '0',
       RSTREGARSTREG => '0',
       RSTREGB => '0',
-      WEA(1) => wea(0),
-      WEA(0) => wea(0),
+      WEA(1 downto 0) => wea(1 downto 0),
       WEBWE(3 downto 2) => B"00",
-      WEBWE(1) => wea(0),
-      WEBWE(0) => wea(0)
+      WEBWE(1 downto 0) => wea(3 downto 2)
     );
 end STRUCTURE;
 library IEEE;
@@ -182,7 +180,7 @@ entity data_bram_bank_blk_mem_gen_prim_width is
     ena : in STD_LOGIC;
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 )
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 )
   );
   attribute ORIG_REF_NAME : string;
   attribute ORIG_REF_NAME of data_bram_bank_blk_mem_gen_prim_width : entity is "blk_mem_gen_prim_width";
@@ -197,7 +195,7 @@ begin
       dina(31 downto 0) => dina(31 downto 0),
       douta(31 downto 0) => douta(31 downto 0),
       ena => ena,
-      wea(0) => wea(0)
+      wea(3 downto 0) => wea(3 downto 0)
     );
 end STRUCTURE;
 library IEEE;
@@ -211,7 +209,7 @@ entity data_bram_bank_blk_mem_gen_generic_cstr is
     ena : in STD_LOGIC;
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 )
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 )
   );
   attribute ORIG_REF_NAME : string;
   attribute ORIG_REF_NAME of data_bram_bank_blk_mem_gen_generic_cstr : entity is "blk_mem_gen_generic_cstr";
@@ -226,7 +224,7 @@ begin
       dina(31 downto 0) => dina(31 downto 0),
       douta(31 downto 0) => douta(31 downto 0),
       ena => ena,
-      wea(0) => wea(0)
+      wea(3 downto 0) => wea(3 downto 0)
     );
 end STRUCTURE;
 library IEEE;
@@ -240,7 +238,7 @@ entity data_bram_bank_blk_mem_gen_top is
     ena : in STD_LOGIC;
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 )
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 )
   );
   attribute ORIG_REF_NAME : string;
   attribute ORIG_REF_NAME of data_bram_bank_blk_mem_gen_top : entity is "blk_mem_gen_top";
@@ -255,7 +253,7 @@ begin
       dina(31 downto 0) => dina(31 downto 0),
       douta(31 downto 0) => douta(31 downto 0),
       ena => ena,
-      wea(0) => wea(0)
+      wea(3 downto 0) => wea(3 downto 0)
     );
 end STRUCTURE;
 library IEEE;
@@ -269,7 +267,7 @@ entity data_bram_bank_blk_mem_gen_v8_4_4_synth is
     ena : in STD_LOGIC;
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 )
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 )
   );
   attribute ORIG_REF_NAME : string;
   attribute ORIG_REF_NAME of data_bram_bank_blk_mem_gen_v8_4_4_synth : entity is "blk_mem_gen_v8_4_4_synth";
@@ -284,7 +282,7 @@ begin
       dina(31 downto 0) => dina(31 downto 0),
       douta(31 downto 0) => douta(31 downto 0),
       ena => ena,
-      wea(0) => wea(0)
+      wea(3 downto 0) => wea(3 downto 0)
     );
 end STRUCTURE;
 library IEEE;
@@ -297,7 +295,7 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
     rsta : in STD_LOGIC;
     ena : in STD_LOGIC;
     regcea : in STD_LOGIC;
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 );
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 );
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
     douta : out STD_LOGIC_VECTOR ( 31 downto 0 );
@@ -305,7 +303,7 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
     rstb : in STD_LOGIC;
     enb : in STD_LOGIC;
     regceb : in STD_LOGIC;
-    web : in STD_LOGIC_VECTOR ( 0 to 0 );
+    web : in STD_LOGIC_VECTOR ( 3 downto 0 );
     addrb : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dinb : in STD_LOGIC_VECTOR ( 31 downto 0 );
     doutb : out STD_LOGIC_VECTOR ( 31 downto 0 );
@@ -330,7 +328,7 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
     s_axi_awvalid : in STD_LOGIC;
     s_axi_awready : out STD_LOGIC;
     s_axi_wdata : in STD_LOGIC_VECTOR ( 31 downto 0 );
-    s_axi_wstrb : in STD_LOGIC_VECTOR ( 0 to 0 );
+    s_axi_wstrb : in STD_LOGIC_VECTOR ( 3 downto 0 );
     s_axi_wlast : in STD_LOGIC;
     s_axi_wvalid : in STD_LOGIC;
     s_axi_wready : out STD_LOGIC;
@@ -370,7 +368,7 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
   attribute C_AXI_TYPE : integer;
   attribute C_AXI_TYPE of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 1;
   attribute C_BYTE_SIZE : integer;
-  attribute C_BYTE_SIZE of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 9;
+  attribute C_BYTE_SIZE of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 8;
   attribute C_COMMON_CLK : integer;
   attribute C_COMMON_CLK of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
   attribute C_COUNT_18K_BRAM : string;
@@ -478,9 +476,9 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
   attribute C_USE_BRAM_BLOCK : integer;
   attribute C_USE_BRAM_BLOCK of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
   attribute C_USE_BYTE_WEA : integer;
-  attribute C_USE_BYTE_WEA of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
+  attribute C_USE_BYTE_WEA of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 1;
   attribute C_USE_BYTE_WEB : integer;
-  attribute C_USE_BYTE_WEB of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
+  attribute C_USE_BYTE_WEB of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 1;
   attribute C_USE_DEFAULT_DATA : integer;
   attribute C_USE_DEFAULT_DATA of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
   attribute C_USE_ECC : integer;
@@ -490,9 +488,9 @@ entity data_bram_bank_blk_mem_gen_v8_4_4 is
   attribute C_USE_URAM : integer;
   attribute C_USE_URAM of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 0;
   attribute C_WEA_WIDTH : integer;
-  attribute C_WEA_WIDTH of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 1;
+  attribute C_WEA_WIDTH of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 4;
   attribute C_WEB_WIDTH : integer;
-  attribute C_WEB_WIDTH of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 1;
+  attribute C_WEB_WIDTH of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 4;
   attribute C_WRITE_DEPTH_A : integer;
   attribute C_WRITE_DEPTH_A of data_bram_bank_blk_mem_gen_v8_4_4 : entity is 64;
   attribute C_WRITE_DEPTH_B : integer;
@@ -627,7 +625,7 @@ inst_blk_mem_gen: entity work.data_bram_bank_blk_mem_gen_v8_4_4_synth
       dina(31 downto 0) => dina(31 downto 0),
       douta(31 downto 0) => douta(31 downto 0),
       ena => ena,
-      wea(0) => wea(0)
+      wea(3 downto 0) => wea(3 downto 0)
     );
 end STRUCTURE;
 library IEEE;
@@ -638,7 +636,7 @@ entity data_bram_bank is
   port (
     clka : in STD_LOGIC;
     ena : in STD_LOGIC;
-    wea : in STD_LOGIC_VECTOR ( 0 to 0 );
+    wea : in STD_LOGIC_VECTOR ( 3 downto 0 );
     addra : in STD_LOGIC_VECTOR ( 5 downto 0 );
     dina : in STD_LOGIC_VECTOR ( 31 downto 0 );
     douta : out STD_LOGIC_VECTOR ( 31 downto 0 )
@@ -687,7 +685,7 @@ architecture STRUCTURE of data_bram_bank is
   attribute C_AXI_TYPE : integer;
   attribute C_AXI_TYPE of U0 : label is 1;
   attribute C_BYTE_SIZE : integer;
-  attribute C_BYTE_SIZE of U0 : label is 9;
+  attribute C_BYTE_SIZE of U0 : label is 8;
   attribute C_COMMON_CLK : integer;
   attribute C_COMMON_CLK of U0 : label is 0;
   attribute C_COUNT_18K_BRAM : string;
@@ -795,9 +793,9 @@ architecture STRUCTURE of data_bram_bank is
   attribute C_USE_BRAM_BLOCK : integer;
   attribute C_USE_BRAM_BLOCK of U0 : label is 0;
   attribute C_USE_BYTE_WEA : integer;
-  attribute C_USE_BYTE_WEA of U0 : label is 0;
+  attribute C_USE_BYTE_WEA of U0 : label is 1;
   attribute C_USE_BYTE_WEB : integer;
-  attribute C_USE_BYTE_WEB of U0 : label is 0;
+  attribute C_USE_BYTE_WEB of U0 : label is 1;
   attribute C_USE_DEFAULT_DATA : integer;
   attribute C_USE_DEFAULT_DATA of U0 : label is 0;
   attribute C_USE_ECC : integer;
@@ -807,9 +805,9 @@ architecture STRUCTURE of data_bram_bank is
   attribute C_USE_URAM : integer;
   attribute C_USE_URAM of U0 : label is 0;
   attribute C_WEA_WIDTH : integer;
-  attribute C_WEA_WIDTH of U0 : label is 1;
+  attribute C_WEA_WIDTH of U0 : label is 4;
   attribute C_WEB_WIDTH : integer;
-  attribute C_WEB_WIDTH of U0 : label is 1;
+  attribute C_WEB_WIDTH of U0 : label is 4;
   attribute C_WRITE_DEPTH_A : integer;
   attribute C_WRITE_DEPTH_A of U0 : label is 64;
   attribute C_WRITE_DEPTH_B : integer;
@@ -893,12 +891,12 @@ U0: entity work.data_bram_bank_blk_mem_gen_v8_4_4
       s_axi_wdata(31 downto 0) => B"00000000000000000000000000000000",
       s_axi_wlast => '0',
       s_axi_wready => NLW_U0_s_axi_wready_UNCONNECTED,
-      s_axi_wstrb(0) => '0',
+      s_axi_wstrb(3 downto 0) => B"0000",
       s_axi_wvalid => '0',
       sbiterr => NLW_U0_sbiterr_UNCONNECTED,
       shutdown => '0',
       sleep => '0',
-      wea(0) => wea(0),
-      web(0) => '0'
+      wea(3 downto 0) => wea(3 downto 0),
+      web(3 downto 0) => B"0000"
     );
 end STRUCTURE;
