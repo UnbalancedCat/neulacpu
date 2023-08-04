@@ -173,7 +173,7 @@ module mycpu_core
         .br_taken_buffer (br_taken_buffer )
     );
 
-    dt dt(
+    dt_stage dt_stage(
         .clk             (clk             ),
         .reset           (reset           ),
         .flush           (flush           ),

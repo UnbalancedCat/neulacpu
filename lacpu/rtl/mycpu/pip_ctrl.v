@@ -34,24 +34,11 @@ module pip_ctrl(
             flush = 0;
             stall = `StallBus'b111111;
         end
-        //id段发生暂停，此时id及之前暂�?
         else if (stallreq_ds) begin
             flush = 0;
             stall = `StallBus'b000111;
         end
-        
-        // else if(stallreq_fs_for_cache) begin
-        //     flush = 0;
-        //     stall = `StallBus'b000011;
-        // end
-        // else if(stallreq_es_for_cache) begin
-        //     flush = 0;
-        //     stall = `StallBus'b011111;
-        // end
-        // else if(stallreq_cache) begin
-        //     flush = 0;
-        //     stall = `StallBus'b111111;
-        // end
+    
         else begin
             flush = 0;
             stall = `StallBus'b000000;

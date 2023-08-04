@@ -11,10 +11,10 @@ ext/
 /lacpu/rtl/xilinx_ip/axi_crossbar_1x2/*
 /lacpu/rtl/xilinx_ip/axi_ram/*
 /lacpu/rtl/xilinx_ip/clk_pll/*
-/lacpu/rtl/xilinx_ip/data_bram_bank/*
+/lacpu/rtl/xilinx_ip/data_sram_bank/*
 
 !/lacpu/rtl/xilinx_ip/axi_crossbar_1x2/axi_crossbar_1x2.xci
 !/lacpu/rtl/xilinx_ip/axi_ram/axi_ram.xci
 !/lacpu/rtl/xilinx_ip/clk_pll/clk_pll.xci
-!/lacpu/rtl/xilinx_ip/data_bram_bank/data_bram_bank.xci
+!/lacpu/rtl/xilinx_ip/data_sram_bank/data_bram_bank.xci
 

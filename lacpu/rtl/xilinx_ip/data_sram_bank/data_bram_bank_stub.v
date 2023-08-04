@@ -1,13 +1,13 @@
 // Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
-// Date        : Mon Jul 31 07:02:57 2023
+// Date        : Fri Aug  4 15:04:01 2023
 // Host        : BHKLaptop running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode synth_stub
 //               C:/Users/Unbal/Desktop/LoongArch/neulacpu/lacpu/rtl/xilinx_ip/data_sram_bank/data_bram_bank_stub.v
 // Design      : data_bram_bank
 // Purpose     : Stub declaration of top-level module interface
-// Device      : xc7a200tfbg676-1
+// Device      : xc7a200tfbg676-2
 // --------------------------------------------------------------------------------
 
 // This empty module with port declaration file causes synthesis tools to infer a black box for IP.

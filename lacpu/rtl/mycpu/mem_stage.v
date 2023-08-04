@@ -214,7 +214,7 @@ module mem2_stage
                        (inst_ld_hu & byte_sel[0]) ? { 16'b0, data_temp[15: 0]}              :
                        (inst_ld_hu & byte_sel[2]) ? { 16'b0, data_temp[31:16]}              :
                        (inst_ld_w  & byte_sel[0]) ?   data_temp                             :
-                                                      32'b0; // inst_ll ? 
+                                                      32'b0;
 
     assign {csr_we,
             csr_wdata_sel,

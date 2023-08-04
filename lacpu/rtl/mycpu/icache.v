@@ -31,9 +31,9 @@ module icache
         .flush      (1'b0                   ),
         .stallreq   (stallreq_icache        ),
         .cached     (1'b1                   ),
-        .sram_en    (inst_sram_en/* & ~i_refill & ~i_invalid*/ ), // TODO!
+        .sram_en    (inst_sram_en           ),
         .sram_we    (inst_sram_we           ),
-        .sram_addr  (inst_sram_addr         ), // _mmu ?
+        .sram_addr  (inst_sram_addr         ),
         .refresh    (icache_refresh         ),
         .miss       (icache_miss            ),
         .axi_raddr  (icache_raddr           ),
@@ -50,7 +50,7 @@ module icache
         .hit           (icache_hit             ),
         .lru           (icache_lru             ),
         .cached        (1'b1                   ),
-        .sram_en       (inst_sram_en/* & ~i_refill & ~i_invalid*/ ), // TODO!
+        .sram_en       (inst_sram_en           ),
         .sram_we       (inst_sram_we           ),
         .sram_addr     (inst_sram_addr         ),
         .sram_wdata    (inst_sram_wdata        ),

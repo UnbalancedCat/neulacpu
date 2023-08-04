@@ -52,18 +52,6 @@ module mycpu_top
     input         bvalid,
     output        bready,
     
-    // // inst sram interface
-    // output        inst_sram_en,
-    // output [ 3:0] inst_sram_we,
-    // output [31:0] inst_sram_addr,
-    // output [31:0] inst_sram_wdata,
-    // input  [31:0] inst_sram_rdata,
-    // // data sram interface
-    // output        data_sram_en,
-    // output [ 3:0] data_sram_we,
-    // output [31:0] data_sram_addr,
-    // output [31:0] data_sram_wdata,
-    // input  [31:0] data_sram_rdata,
     // trace debug interface
     output [31:0] debug_wb_pc,
     output [ 3:0] debug_wb_rf_we,
@@ -223,24 +211,11 @@ module mycpu_top
     end
     assign data_sram_rdata = dcache_cached_r ? dcache_temp_rdata : uncache_temp_rdata;
 
-
-    // mmu u_inst_mmu(
-    // 	.addr_i  (inst_sram_addr  ),
-    //     .addr_o  (inst_sram_addr_mmu  ),
-    //     .cache_v (icache_cached )
-    // );
     mmu data_mmu(
     	.addr_i  (data_sram_addr  ),
         .addr_o  (data_sram_addr_mmu  ),
         .cache_v (dcache_cached )
     );
-
-
-    // cache signal from tlb
-    // begin
-    //assign dcache_uncached = 1'b0;
-
-    // end
 
     axi_ctrl_v5 axi_ctrl(
     	.clk                  (clk                  ),

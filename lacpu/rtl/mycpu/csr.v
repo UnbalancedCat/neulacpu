@@ -63,9 +63,6 @@ module csr(
     reg         timer_en;
     reg  [63:0] timer_64;
 
-    // reg         has_int_r;
-    // reg  [ 1:0] plv_r;
-
     wire        inst_sc_w;
     wire        inst_csrrd;
     wire        inst_csrwr;
@@ -92,21 +89,6 @@ module csr(
     wire        va_error;
     wire [31:0] bad_va;
 
-    // always @(posedge clk) begin
-    //     if(reset) begin
-    //         has_int_r <= 0;
-    //         plv_r     <= 0;
-    //     end
-    //     else begin
-    //         has_int_r <= ((ecfg[`LIE] & estat[`IS]) != 13'b0) & crmd[`IE];
-    //         plv_r     <= except_en & !inst_ertn             ? 2'b0            :
-    //                      inst_ertn                          ? prmd[`PPLV]     :
-    //                      csr_we && (csr_addr == `CRMD_ADDR) ? csr_wdata[`PLV] :
-    //                                                           crmd[`PLV];
-    //     end
-    // end
-
-    // out TODO!
     assign has_int_out = ((ecfg[`LIE] & estat[`IS]) != 13'b0) & crmd[`IE];
     assign plv_out     = except_en & !inst_ertn             ? 2'b0            :
                          inst_ertn                          ? prmd[`PPLV]     :

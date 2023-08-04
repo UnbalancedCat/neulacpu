@@ -33,10 +33,10 @@ module dcache
         .reset      (reset                  ),
         .flush      (1'b0                   ),
         .stallreq   (stallreq_dcache        ),
-        .cached     (~dcache_uncached       ), // ? TODO from tlb
-        .sram_en    (data_sram_en/* & ~d_refill & ~d_invalid & ~d_modify*/), // TODO!
+        .cached     (~dcache_uncached       ),
+        .sram_en    (data_sram_en           ),
         .sram_we    (data_sram_we           ),
-        .sram_addr  (data_sram_addr         ), // _mmu ?
+        .sram_addr  (data_sram_addr         ),
         .refresh    (dcache_refresh         ),
         .miss       (dcache_miss            ),
         .axi_raddr  (dcache_raddr           ),
@@ -52,10 +52,10 @@ module dcache
         .write_back    (dcache_write_back      ),
         .hit           (dcache_hit             ),
         .lru           (dcache_lru             ),
-        .cached        (~dcache_uncached       ), // ? from tlb   
-        .sram_en       (data_sram_en/* & ~d_refill & ~d_invalid & ~d_modify*/), // TODO!
+        .cached        (~dcache_uncached       ),  
+        .sram_en       (data_sram_en           ),
         .sram_we       (data_sram_we           ),
-        .sram_addr     (data_sram_addr         ), // _mmu ?
+        .sram_addr     (data_sram_addr         ),
         .sram_wdata    (data_sram_wdata        ),
         .sram_rdata    (data_sram_rdata        ),
         .refresh       (dcache_refresh         ),

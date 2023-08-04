@@ -1,4 +1,4 @@
-module dt
+module dt_stage 
 #(
     parameter ES_TO_DT_BUS_WD = 340,
     parameter DT_TO_MS_BUS_WD = 271,

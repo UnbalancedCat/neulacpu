@@ -13,7 +13,6 @@ module exe_stage
     input  [ 5:0] stall,
 
     output        stallreq_es,
-    //output        stallreq_es_for_cache,
 
     input  [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus,    
     output [ES_TO_DT_BUS_WD -1:0] es_to_dts_bus,
@@ -22,18 +21,9 @@ module exe_stage
     input         src2_is_forward,    
     input  [31:0] src1_forward_result,
     input  [31:0] src2_forward_result,
-    //input  [MS_TO_ES_BUS_WD -1:0] dts_to_es_bus,
-    //input  [MS_TO_ES_BUS_WD -1:0] ms1_to_es_bus,
-    //input  [MS_TO_ES_BUS_WD -1:0] ms2_to_es_bus, 
-    //input  [WS_TO_ES_BUS_WD -1:0] ws_to_es_bus,
 
     output [BR_BUS_WD       -1:0] br_bus,
     input                         br_taken_buffer
-
-    // output        data_sram_en,
-    // output [ 3:0] data_sram_we,
-    // output [31:0] data_sram_addr,
-    // output [31:0] data_sram_wdata
 );
 
     reg [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus_r;
@@ -130,26 +120,6 @@ module exe_stage
             inst              //31 :0
            } = ds_to_es_bus_r;
 
-    // assign {dts_reg_we,
-    //         dts_dest,
-    //         dts_result
-    //        } = dts_to_es_bus;
-
-    // assign {ms1_reg_we,
-    //         ms1_dest,
-    //         ms1_result
-    //        } = ms1_to_es_bus;
-
-    // assign {ms2_reg_we,
-    //         ms2_dest,
-    //         ms2_result
-    //        } = ms2_to_es_bus;
-
-    // assign {ws_reg_we,
-    //         ws_dest,
-    //         ws_result
-    //        } = ws_to_es_bus;
-
     assign es_to_dts_bus = {data_sram_en    ,//339:339
                             data_sram_we    ,//338:335
                             data_sram_addr  ,//334:303
@@ -191,18 +161,10 @@ module exe_stage
         end
     end
 
-    assign src1 = //dts_reg_we & (dts_dest == rj ) & (rj  != 1'b0) ? dts_result :   // TODO!
-                  //ms1_reg_we & (ms1_dest == rj ) & (rj  != 1'b0) ? ms1_result :   // TODO!
-                  //ms2_reg_we & (ms2_dest == rj ) & (rj  != 1'b0) ? ms2_result :
-                  //ws_reg_we  & (ws_dest  == rj ) & (rj  != 1'b0) ? ws_result  :
-                  src1_is_forward                                ? src1_forward_result :
-                                                                   rj_value;
-    assign src2 = //dts_reg_we & (dts_dest == rkd) & (rkd != 1'b0) ? dts_result :   // TODO!
-                  //ms1_reg_we & (ms1_dest == rkd) & (rkd != 1'b0) ? ms1_result :   // TODO!
-                  //ms2_reg_we & (ms2_dest == rkd) & (rkd != 1'b0) ? ms2_result :
-                  //ws_reg_we  & (ws_dest  == rkd) & (rkd != 1'b0) ? ws_result  :
-                  src2_is_forward                                ? src2_forward_result :
-                                                                   rkd_value;
+    assign src1 = src1_is_forward ? src1_forward_result :
+                                    rj_value;
+    assign src2 = src2_is_forward ? src2_forward_result :
+                                    rkd_value;
     
     assign alu_src1 = src1_is_pc ? es_pc :
                                    src1;

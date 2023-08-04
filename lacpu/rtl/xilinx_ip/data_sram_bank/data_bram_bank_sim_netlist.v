@@ -1,14 +1,14 @@
 // Copyright 1986-2019 Xilinx, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2019.2 (win64) Build 2708876 Wed Nov  6 21:40:23 MST 2019
-// Date        : Mon Jul 31 07:02:57 2023
+// Date        : Fri Aug  4 15:04:01 2023
 // Host        : BHKLaptop running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode funcsim
 //               C:/Users/Unbal/Desktop/LoongArch/neulacpu/lacpu/rtl/xilinx_ip/data_sram_bank/data_bram_bank_sim_netlist.v
 // Design      : data_bram_bank
 // Purpose     : This verilog netlist is a functional simulation representation of the design and should not be modified
 //               or synthesized. This netlist cannot be used for SDF annotated simulation.
-// Device      : xc7a200tfbg676-1
+// Device      : xc7a200tfbg676-2
 // --------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 

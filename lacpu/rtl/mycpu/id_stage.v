@@ -30,9 +30,6 @@ module id_stage
     reg  [31:0] inst_sram_rdata_r;
     reg         stall_flag;
 
-    reg  [ 6:0] es_load_buffer;
-    reg         es_csr_buffer;
-
     wire        br_flush;
     wire [31:0] ds_pc;
 
@@ -74,13 +71,6 @@ module id_stage
 
     wire [31:0] rj_value;
     wire [31:0] rkd_value;
-
-    wire [ 4:0] es_dest;
-    wire        es_is_load;
-    wire        es_is_csr;
-    wire        es_reg_we;
-    wire        stallreq_load;
-    wire        stallreq_csr;
 
     wire        excp_adef;
     wire [31:0] csr_vec_l;
@@ -218,38 +208,5 @@ module id_stage
 
     assign rj_value  = rf_rdata1;
     assign rkd_value = rf_rdata2;
-
-    always @ (posedge clk) begin
-        if (reset) begin
-            es_load_buffer <= 7'b0;
-            es_csr_buffer <= 1'b0;
-        end
-        else if (flush) begin
-            es_load_buffer <= 7'b0;
-            es_csr_buffer <= 1'b0;
-        end
-        else if (stall[2]&(!stall[3])) begin
-            es_load_buffer <= 7'b0;
-            es_csr_buffer <= 1'b0;
-        end
-        else if (!stall[2]) begin
-            es_load_buffer <= {|load_op, reg_we, dest};
-            es_csr_buffer <= |csr_op;
-        end
-    end
-
-    assign {es_is_load,
-            es_reg_we,
-            es_dest
-           } = es_load_buffer;
-    assign es_is_csr = es_csr_buffer;
-    //ex段为load指令，且发生数据相关时，id段需要被暂停
-    assign stallreq_load = es_is_load & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));    //TODO?
-    assign stallreq_csr  = es_is_csr & es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));
-
-    wire stallreq_forward;
-    assign stallreq_forward = es_reg_we & ((es_dest==rj & rj!=0)|(es_dest==rkd & rkd!=0));        // TODO!
-
-    assign stallreq_ds   = stallreq_load | stallreq_csr/* | stallreq_forward*/;
 
 endmodule

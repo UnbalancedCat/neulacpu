@@ -34,8 +34,6 @@ module inst_decoder(
     output        csr_wdata_sel,
     output [31:0] csr_vec_l,
 
-    //output [ 3:0] sel_rf_res,
-
     output       reg_we
 );
     wire        dest_is_r1;
@@ -536,10 +534,4 @@ module inst_decoder(
                          //inst_idle     ;
 
     assign excp_ipe = kernel_inst && (csr_plv == 2'b11);
-
-    // rf_res from
-    // assign sel_rf_res[0] = inst_jirl | inst_bl;
-    // assign sel_rf_res[1] = |load_op;
-    // assign sel_rf_res[2] = |csr_op;
-    // assign sel_rf_res[3] = |mul_div_op;
 endmodule

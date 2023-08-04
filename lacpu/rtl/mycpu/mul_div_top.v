@@ -32,16 +32,6 @@ module mul_div_top(
     wire        sign_flag_locked;
     wire        rem_flag_locked;
 
-
-    //-------------------------  
-
-    wire [63:0] unsigned_prod;
-    wire [63:0] signed_prod;
-
-    assign unsigned_prod = a * b;
-    //assign signed_prod = $signed(a) * $signed(b);
-
-    //-------------------------
     assign mul_en = mul_div_op[0] | mul_div_op[1];
     assign div_en = mul_div_op[2] | mul_div_op[3];
 

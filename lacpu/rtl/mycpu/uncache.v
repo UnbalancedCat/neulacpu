@@ -50,13 +50,6 @@ module uncache
         end
     end
 
-    // assign rd_req = conf_en & ~valid & ~(|conf_we);
-    // assign rd_addr = conf_addr;
-    // assign wr_req = conf_en & ~valid & (|conf_we);
-    // assign wr_wstrb = conf_we;
-    // assign wr_addr = conf_addr;
-    // assign wr_data = conf_wdata;
-
     always @ (posedge clk) begin
         if (!resetn) begin
             conf_rdata <= 32'b0;

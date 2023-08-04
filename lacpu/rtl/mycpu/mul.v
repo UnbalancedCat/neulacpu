@@ -16,6 +16,7 @@ module mul(
     wire        carry;
 
     wire [63:0] mul_result;
+    reg  [63:0] mul_result_r;
 
     always @ (posedge clk) begin
         if (reset) begin
@@ -25,7 +26,7 @@ module mul(
             cnt <= cnt - 1;
         end
         else if (in_valid) begin
-            cnt <= 1;//32;
+            cnt <= 2;//32;
         end
     end
 
@@ -35,15 +36,18 @@ module mul(
         if (reset) begin
             result_h <= 0;
             result_l <= 0;
+            mul_result_r <= 0;
         end 
         else if (cnt != 0) begin
             //{result_h, result_l} <= {carry, add_result, result_l[31:1]};
-            result_h <= mul_result[63:32];
-            result_l <= mul_result[31: 0];
+            result_h <= mul_result_r[63:32];
+            result_l <= mul_result_r[31: 0];
+            mul_result_r <= mul_result;
         end
         else if (in_valid) begin
             result_h <= 0;
             result_l <= 0;//b;
+            mul_result_r <= 0;
         end
     end 
 
