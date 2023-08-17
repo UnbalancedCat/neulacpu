@@ -19,7 +19,7 @@ module id_stage
     input  [ 1:0] csr_plv,
     input         csr_has_int,
 
-    input  [FS_TO_DS_BUS_WD -1:0] fs2_to_ds_bus,
+    input  [FS_TO_DS_BUS_WD -1:0] fs3_to_ds_bus,
     input  [WS_TO_RF_BUS_WD -1:0] ws_to_rf_bus,
     output [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus
 );
@@ -140,12 +140,12 @@ module id_stage
             stall_flag          <= 0;
         end
         else if ((!stall[1]) & stall_flag) begin
-            fs2_to_ds_bus_r     <= fs2_to_ds_bus;
+            fs2_to_ds_bus_r     <= fs3_to_ds_bus;
             inst_sram_rdata_r   <= inst_sram_rdata_buffer;
             stall_flag          <= 0;
         end
         else if ((!stall[1]) & (!stall_flag)) begin
-            fs2_to_ds_bus_r     <= fs2_to_ds_bus;
+            fs2_to_ds_bus_r     <= fs3_to_ds_bus;
             inst_sram_rdata_r   <= inst_sram_rdata;
             stall_flag          <= 0;
         end

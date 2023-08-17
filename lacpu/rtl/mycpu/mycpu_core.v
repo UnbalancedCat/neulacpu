@@ -49,7 +49,8 @@ module mycpu_core
     always @(posedge clk) reset <= ~resetn;
 
     wire [FS_TO_DS_BUS_WD -1:0] fs1_to_fs2_bus;
-    wire [FS_TO_DS_BUS_WD -1:0] fs2_to_ds_bus;
+    wire [FS_TO_DS_BUS_WD -1:0] fs2_to_fs3_bus;
+    wire [FS_TO_DS_BUS_WD -1:0] fs3_to_ds_bus;
     wire [DS_TO_ES_BUS_WD -1:0] ds_to_es_bus;
     wire [ES_TO_DT_BUS_WD -1:0] es_to_dts_bus;
     wire [DT_TO_MS_BUS_WD -1:0] dts_to_ms1_bus;
@@ -116,11 +117,7 @@ module mycpu_core
         .stall           (stall           ),
         .new_pc          (new_pc          ),
         .fs1_to_fs2_bus  (fs1_to_fs2_bus  ),
-        .br_bus          (br_bus_real     ),
-        .inst_sram_en    (inst_sram_en    ),
-        .inst_sram_we    (inst_sram_we    ),
-        .inst_sram_addr  (inst_sram_addr  ),
-        .inst_sram_wdata (inst_sram_wdata )
+        .br_bus          (br_bus_real     )
     );
 
     if2_stage if2_stage(
@@ -131,7 +128,23 @@ module mycpu_core
         
         .br_taken        (br_taken        ),
         .fs1_to_fs2_bus  (fs1_to_fs2_bus  ),
-        .fs2_to_ds_bus   (fs2_to_ds_bus   )
+        .fs2_to_fs3_bus  (fs2_to_fs3_bus  ),
+
+        .inst_sram_en    (inst_sram_en    ),
+        .inst_sram_we    (inst_sram_we    ),
+        .inst_sram_addr  (inst_sram_addr  ),
+        .inst_sram_wdata (inst_sram_wdata )
+    );
+
+    if3_stage if3_stage(
+        .clk             (clk             ),
+        .reset           (reset           ),
+        .flush           (flush           ),
+        .stall           (stall           ),
+        
+        .br_taken        (br_taken        ),
+        .fs2_to_fs3_bus  (fs2_to_fs3_bus  ),
+        .fs3_to_ds_bus   (fs3_to_ds_bus   )
     );
 
     id_stage id_stage(
@@ -141,7 +154,7 @@ module mycpu_core
         .stall           (stall           ),
         .br_taken        (br_taken        ),
         .stallreq_ds     (stallreq_ds     ),
-        .fs2_to_ds_bus   (fs2_to_ds_bus   ),
+        .fs3_to_ds_bus   (fs3_to_ds_bus   ),
         .inst_sram_rdata (inst_sram_rdata ),
         .csr_plv         (csr_plv         ),
         .csr_has_int     (csr_has_int     ),

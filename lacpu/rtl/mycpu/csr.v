@@ -1,4 +1,4 @@
-`include "csr.hv"
+`include "csr.vh"
 module csr(
     input        clk,
     input        reset,
@@ -249,8 +249,8 @@ module csr(
                                   end 
                 `EUEN_ADDR      : euen	          <= csr_wdata_temp;
                 `ECFG_ADDR      : begin 
-                                  ecfg            <= csr_wdata_temp;            // ????????????????
-
+                                  ecfg[ `LIE_1]   <= csr_wdata_temp[ `LIE_1];
+                                  ecfg[ `LIE_2]   <= csr_wdata_temp[ `LIE_2];
                                   end 
                 `ESTAT_ADDR     : estat[1:0]      <= csr_wdata_temp[1:0];
                 `ERA_ADDR       : era	          <= csr_wdata_temp;
